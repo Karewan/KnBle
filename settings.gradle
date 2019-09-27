@@ -1,0 +1,2 @@
+include ':knble'
+rootProject.name='KnBle'
