@@ -1,3 +1,28 @@
+/*
+	KnBle
+
+	Released under the MIT License (MIT)
+
+	Copyright (c) 2019-2020 Florent VIALATTE
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+ */
 package ovh.karewan.knble.scan;
 
 import android.bluetooth.BluetoothAdapter;
@@ -46,7 +71,7 @@ public class Scanner {
 	 * @return ScanFilter
 	 */
 	@NonNull
-	public synchronized ScanFilters getScanFilters() {
+	public ScanFilters getScanFilters() {
 		return mScanFilters;
 	}
 
@@ -63,7 +88,7 @@ public class Scanner {
 	 * @return ScanSettings
 	 */
 	@NonNull
-	public synchronized ScanSettings getScanSettings() {
+	public ScanSettings getScanSettings() {
 		return mScanSettings;
 	}
 
@@ -71,7 +96,7 @@ public class Scanner {
 	 * Check is scan is running
 	 * @return boolean
 	 */
-	public synchronized boolean isScanning() {
+	public boolean isScanning() {
 		return mIsScanning;
 	}
 
@@ -79,7 +104,7 @@ public class Scanner {
 	 * Get the last scan error
 	 * @return mLastError
 	 */
-	public synchronized int getLastError() {
+	public int getLastError() {
 		return mLastError;
 	}
 
@@ -88,7 +113,7 @@ public class Scanner {
 	 * @return mScannedDevices
 	 */
 	@NonNull
-	public synchronized HashMap<String, BleDevice> getScannedDevices() {
+	public HashMap<String, BleDevice> getScannedDevices() {
 		return mScannedDevices;
 	}
 
@@ -112,6 +137,14 @@ public class Scanner {
 			stopScan();
 		}
 
+		// Check if bluetooth is enabled
+		if(!KnBle.isBluetoothEnabled()) {
+			// Enable bluetooth
+			KnBle.enableBluetooth(true);
+			// Add delay to be sure the adapter has time to init before start scan
+			delayBeforeStart += 5000;
+		}
+
 		// Clear previous scanned devices
 		mScannedDevices.clear();
 
@@ -128,29 +161,11 @@ public class Scanner {
 			return;
 		}
 
-		// Init LE Scanner for Android 6+
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && mBluetoothLeScanner == null) {
-			mBluetoothLeScanner = KnBle.getBluetoothAdapter().getBluetoothLeScanner();
-			if(mBluetoothLeScanner == null) {
-				mLastError = BleScanCallback.SCANNER_UNAVAILABLE;
-				callback.onScanFailed(mLastError);
-				return;
-			}
-		}
-
 		// Check if location services are enabled on Android 6+
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Utils.areLocationServicesEnabled(KnBle.getContext())) {
 			mLastError = BleScanCallback.LOCATION_DISABLED;
 			callback.onScanFailed(mLastError);
 			return;
-		}
-
-		// Check if bluetooth is enabled
-		if(!KnBle.isBluetoothEnabled()) {
-			// Enable bluetooth
-			KnBle.enableBluetooth(true);
-			// Add delay to be sure the adapter has time to init before start scan
-			delayBeforeStart += 5000;
 		}
 
 		// Scan started
@@ -189,6 +204,17 @@ public class Scanner {
 
 		// Android 6+
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			// Init LE Scanner
+			if(mBluetoothLeScanner == null) {
+				if(KnBle.getBluetoothAdapter() != null) mBluetoothLeScanner = KnBle.getBluetoothAdapter().getBluetoothLeScanner();
+
+				if(mBluetoothLeScanner == null) {
+					mLastError = BleScanCallback.SCANNER_UNAVAILABLE;
+					if(mCallback != null) mCallback.onScanFailed(mLastError);
+					return;
+				}
+			}
+
 			if(mScanCallback == null) {
 				// Init the callback
 				mScanCallback = new android.bluetooth.le.ScanCallback() {
@@ -279,7 +305,7 @@ public class Scanner {
 	 * @param scanRecord The scan record
 	 * @param manualFilter Use manual filter or not
 	 */
-	private synchronized void processScanResult(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] scanRecord, boolean manualFilter) {
+	private void processScanResult(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] scanRecord, boolean manualFilter) {
 		// Apply filter manually ?
 		if(manualFilter && mScanFilters != null) {
 			// Nb of filters
@@ -326,7 +352,9 @@ public class Scanner {
 		BleDevice bleDevice = new BleDevice(device, rssi, scanRecord, System.currentTimeMillis());
 
 		// Add/Update hashmap
-		mScannedDevices.put(device.getAddress(), bleDevice);
+		synchronized (Scanner.class) {
+			mScannedDevices.put(device.getAddress(), bleDevice);
+		}
 
 		// Notify the UI
 		if(!exist && mCallback != null) mCallback.onScanResult(bleDevice);

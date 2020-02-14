@@ -1,3 +1,28 @@
+/*
+	KnBle
+
+	Released under the MIT License (MIT)
+
+	Copyright (c) 2019-2020 Florent VIALATTE
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+ */
 package ovh.karewan.knble.ble;
 
 import android.bluetooth.BluetoothDevice;
@@ -82,7 +107,7 @@ public class DeviceOp {
 	 * @return mBluetoothGatt
 	 */
 	@Nullable
-	public synchronized BluetoothGatt getBluetoothGatt() {
+	public BluetoothGatt getBluetoothGatt() {
 		return mBluetoothGatt;
 	}
 
@@ -90,7 +115,7 @@ public class DeviceOp {
 	 * Return the current connection state
 	 * @return mState
 	 */
-	public synchronized int getState() {
+	public int getState() {
 		return mState;
 	}
 
@@ -98,7 +123,7 @@ public class DeviceOp {
 	 * Check if device is connected
 	 * @return boolean
 	 */
-	public synchronized boolean isConnected() {
+	public boolean isConnected() {
 		return mState == BleGattCallback.CONNECTED;
 	}
 
@@ -106,7 +131,7 @@ public class DeviceOp {
 	 * Get the last gatt status
 	 * @return lastGattStatus
 	 */
-	public synchronized int getLastGattStatus() {
+	public int getLastGattStatus() {
 		return lastGattStatus;
 	}
 
@@ -337,7 +362,7 @@ public class DeviceOp {
 	 * Check if a service exist
 	 * @param serviceUUID The service UUID
 	 */
-	public synchronized void hasService(@NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
+	public void hasService(@NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
 		Log.d(LOG, "hasService() serviceUUID=" + serviceUUID);
 
 		// Run on the main thread
@@ -372,7 +397,7 @@ public class DeviceOp {
 	 * @param serviceUUID The service UUID
 	 * @param characteristicUUID The characteristic UUID
 	 */
-	public synchronized void hasCharacteristic(@NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
+	public void hasCharacteristic(@NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
 		Log.d(LOG, "hasCharacteristic() serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID);
 		// Run on the main thread
 		mMainHandler.post(() -> {
@@ -513,12 +538,12 @@ public class DeviceOp {
 	 * Request connection priority
 	 * @param connectionPriority priority
 	 */
-	public synchronized void requestConnectionPriority(int connectionPriority) {
+	public void requestConnectionPriority(int connectionPriority) {
 		Log.d(LOG, "requestConnectionPriority() connectionPriority=" + connectionPriority);
 		if(!isConnected()) return;
 
 		mMainHandler.post(() -> {
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) mBluetoothGatt.requestConnectionPriority(connectionPriority);
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mBluetoothGatt!= null) mBluetoothGatt.requestConnectionPriority(connectionPriority);
 		});
 	}
 
@@ -589,13 +614,13 @@ public class DeviceOp {
 				mBluetoothGatt = null;
 			}
 
-			/*// Unbond the device
+			// Unbond the device
 			try {
 				Method methodUnBond = mDevice.getDevice().getClass().getMethod("removeBond", (Class[]) null);
 				methodUnBond.invoke(mDevice.getDevice(), (Object[]) null);
 			} catch (Exception e) {
 				e.printStackTrace();
-			}*/
+			}
 
 			// Callback
 			if(mCallback != null) {
@@ -609,11 +634,13 @@ public class DeviceOp {
 	 * Change the BleGattCallback
 	 * @param calback The callback
 	 */
-	public synchronized void setGattCallback(@NonNull BleGattCallback calback) {
+	public void setGattCallback(@NonNull BleGattCallback calback) {
 		Log.d(LOG, "setGattCallback()");
 
 		mMainHandler.post(() -> {
-			mCallback = calback;
+			synchronized (DeviceOp.class) {
+				mCallback = calback;
+			}
 		});
 	}
 
@@ -621,7 +648,7 @@ public class DeviceOp {
 	 * Clear device cache
 	 */
 	@SuppressWarnings({"JavaReflectionMemberAccess"})
-	private synchronized void clearDeviceCache() {
+	private void clearDeviceCache() {
 		Log.d(LOG, "clearDeviceCache()");
 
 		mMainHandler.post(() -> {

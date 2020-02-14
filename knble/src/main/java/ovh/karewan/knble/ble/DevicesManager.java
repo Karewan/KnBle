@@ -1,3 +1,28 @@
+/*
+	KnBle
+
+	Released under the MIT License (MIT)
+
+	Copyright (c) 2019-2020 Florent VIALATTE
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+ */
 package ovh.karewan.knble.ble;
 
 import androidx.annotation.NonNull;
@@ -43,7 +68,7 @@ public class DevicesManager {
 	 * @param device The device
 	 * @return boolean
 	 */
-	public synchronized boolean containDevice(@NonNull BleDevice device) {
+	public boolean containDevice(@NonNull BleDevice device) {
 		return mDevicesOp.containsKey(device.getMac());
 	}
 
@@ -53,7 +78,7 @@ public class DevicesManager {
 	 * @return BleDeviceOp
 	 */
 	@Nullable
-	public synchronized DeviceOp getDeviceOp(@NonNull BleDevice device) {
+	public DeviceOp getDeviceOp(@NonNull BleDevice device) {
 		return mDevicesOp.get(device.getMac());
 	}
 
@@ -62,7 +87,7 @@ public class DevicesManager {
 	 * @return mDevicesOp
 	 */
 	@NonNull
-	public synchronized HashMap<String, DeviceOp> getDevicesOpList() {
+	public HashMap<String, DeviceOp> getDevicesOpList() {
 		return mDevicesOp;
 	}
 
@@ -71,7 +96,7 @@ public class DevicesManager {
 	 * @return Devices
 	 */
 	@NonNull
-	public synchronized List<BleDevice> getDevicesList() {
+	public List<BleDevice> getDevicesList() {
 		List<BleDevice> devicesList = new ArrayList<>();
 		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) devicesList.add(entry.getValue().getDevice());
 		return devicesList;
@@ -83,7 +108,7 @@ public class DevicesManager {
 	 * @return boolean
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized boolean isConnected(@NonNull BleDevice device) {
+	public boolean isConnected(@NonNull BleDevice device) {
 		if(!containDevice(device)) return false;
 		return getDeviceOp(device).isConnected();
 	}
@@ -94,7 +119,7 @@ public class DevicesManager {
 	 * @return The state
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized int getDeviceState(@NonNull BleDevice device) {
+	public int getDeviceState(@NonNull BleDevice device) {
 		if(!containDevice(device)) return BleGattCallback.DISCONNECTED;
 		return getDeviceOp(device).getState();
 	}
@@ -104,7 +129,7 @@ public class DevicesManager {
 	 * @return Connected devices
 	 */
 	@NonNull
-	public synchronized List<BleDevice> getConnectedDevices() {
+	public List<BleDevice> getConnectedDevices() {
 		List<BleDevice> connectedDevices = new ArrayList<>();
 		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) {
 			if(entry.getValue().isConnected()) connectedDevices.add(entry.getValue().getDevice());
@@ -118,7 +143,7 @@ public class DevicesManager {
 	 * @return The last gatt status
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized int getLastGattStatusOfDevice(@NonNull BleDevice device) {
+	public int getLastGattStatusOfDevice(@NonNull BleDevice device) {
 		if(!containDevice(device)) return 0;
 		return getDeviceOp(device).getLastGattStatus();
 	}
@@ -128,7 +153,7 @@ public class DevicesManager {
 	 * @param device The device
 	 * @param connectionPriority The connection priority
 	 */
-	public synchronized void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
+	public void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).requestConnectionPriority(connectionPriority);
 	}
@@ -139,7 +164,7 @@ public class DevicesManager {
 	 * @param callback The callback
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
+	public void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
 		addDevice(device);
 		getDeviceOp(device).connect(callback);
 	}
@@ -150,7 +175,7 @@ public class DevicesManager {
 	 * @param callback The callback
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
+	public void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).setGattCallback(callback);
 	}
@@ -162,7 +187,7 @@ public class DevicesManager {
 	 * @param callback The callback
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
+	public void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).hasService(serviceUUID, callback);
 	}
@@ -175,7 +200,7 @@ public class DevicesManager {
 	 * @param callback The callback
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
+	public void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).hasCharacteristic(serviceUUID, characteristicUUID, callback);
 	}
@@ -193,7 +218,7 @@ public class DevicesManager {
 	 * @param callback The callback
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized void write(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull byte[] data, boolean split, int spliSize, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleWriteCallback callback) {
+	public void write(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull byte[] data, boolean split, int spliSize, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleWriteCallback callback) {
 		if(!containDevice(device)) {
 			callback.onWriteFailed();
 			return;
@@ -210,7 +235,7 @@ public class DevicesManager {
 	 * @param callback The call back
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
+	public void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
 		if(!containDevice(device)) {
 			callback.onReadFailed();
 			return;
@@ -224,14 +249,14 @@ public class DevicesManager {
 	 * @param device The device
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public synchronized void disconnect(@NonNull BleDevice device) {
+	public void disconnect(@NonNull BleDevice device) {
 		if(containDevice(device)) getDeviceOp(device).disconnect();
 	}
 
 	/**
 	 * Disconnect all devices
 	 */
-	public synchronized void disconnectAll() {
+	public void disconnectAll() {
 		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) entry.getValue().disconnect();
 	}
 
