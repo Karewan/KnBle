@@ -27,7 +27,6 @@ dependencies {
 }
 ```
 
-Do not forget to add internet permission in manifest if already not present
 ```xml
 <uses-permission android:name="android.permission.BLUETOOTH"/>
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
@@ -36,7 +35,6 @@ Do not forget to add internet permission in manifest if already not present
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 ```
 
-Then initialize :
 ```java
 KnBle.initialize(getApplicationContext());
 ```
