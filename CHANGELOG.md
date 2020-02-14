@@ -6,7 +6,7 @@ Version 1.0.1 *(2020-02-14)*
 
  * Destroy previous instance before init a new one
  * Remove synchronized flag on few methods (unnecessary)
- * Unbund device after disconnect
+ * Unbound device after disconnect
  * Bump compile and target SDK to 29
  * Bugs fix
 
