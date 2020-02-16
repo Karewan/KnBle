@@ -39,24 +39,35 @@ import ovh.karewan.knble.interfaces.BleReadCallback;
 import ovh.karewan.knble.interfaces.BleWriteCallback;
 import ovh.karewan.knble.struct.BleDevice;
 
+@SuppressWarnings("ConstantConditions")
 public class DevicesManager {
 	// Devices OP container
 	private final HashMap<String, DeviceOp> mDevicesOp = new HashMap<>();
+
+	private DevicesManager() {}
+
+	private static class Loader {
+		static final DevicesManager INSTANCE = new DevicesManager();
+	}
+
+	@NonNull
+	public static DevicesManager getInstance() {
+		return Loader.INSTANCE;
+	}
 
 	/**
 	 * Add a device
 	 * @param device The device
 	 */
-	public synchronized void addDevice(@NonNull BleDevice device) {
-		if(!containDevice(device)) mDevicesOp.put(device.getMac(), new DeviceOp(device));
+	public void addDevice(@NonNull BleDevice device) {
+		mDevicesOp.put(device.getMac(), new DeviceOp(device));
 	}
 
 	/**
 	 * Remove a device
 	 * @param device The device
 	 */
-	@SuppressWarnings("ConstantConditions")
-	public synchronized void removeDevice(@NonNull BleDevice device) {
+	public void removeDevice(@NonNull BleDevice device) {
 		if(containDevice(device)) {
 			getDeviceOp(device).disconnect();
 			mDevicesOp.remove(device.getMac());
@@ -107,7 +118,6 @@ public class DevicesManager {
 	 * @param device The device
 	 * @return boolean
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public boolean isConnected(@NonNull BleDevice device) {
 		if(!containDevice(device)) return false;
 		return getDeviceOp(device).isConnected();
@@ -118,7 +128,6 @@ public class DevicesManager {
 	 * @param device The device
 	 * @return The state
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public int getDeviceState(@NonNull BleDevice device) {
 		if(!containDevice(device)) return BleGattCallback.DISCONNECTED;
 		return getDeviceOp(device).getState();
@@ -142,7 +151,6 @@ public class DevicesManager {
 	 * @param device The device
 	 * @return The last gatt status
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public int getLastGattStatusOfDevice(@NonNull BleDevice device) {
 		if(!containDevice(device)) return 0;
 		return getDeviceOp(device).getLastGattStatus();
@@ -163,7 +171,6 @@ public class DevicesManager {
 	 * @param device The device
 	 * @param callback The callback
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
 		addDevice(device);
 		getDeviceOp(device).connect(callback);
@@ -174,7 +181,6 @@ public class DevicesManager {
 	 * @param device The device
 	 * @param callback The callback
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).setGattCallback(callback);
@@ -186,7 +192,6 @@ public class DevicesManager {
 	 * @param serviceUUID The service UUID
 	 * @param callback The callback
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).hasService(serviceUUID, callback);
@@ -199,7 +204,6 @@ public class DevicesManager {
 	 * @param characteristicUUID The characteristic UUID
 	 * @param callback The callback
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).hasCharacteristic(serviceUUID, characteristicUUID, callback);
@@ -217,8 +221,16 @@ public class DevicesManager {
 	 * @param intervalBetweenTwoPackage Interval between two package
 	 * @param callback The callback
 	 */
-	@SuppressWarnings("ConstantConditions")
-	public void write(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull byte[] data, boolean split, int spliSize, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleWriteCallback callback) {
+	public void write(@NonNull BleDevice device,
+					  @NonNull String serviceUUID,
+					  @NonNull String characteristicUUID,
+					  @NonNull byte[] data,
+					  boolean split,
+					  int spliSize,
+					  boolean sendNextWhenLastSuccess,
+					  long intervalBetweenTwoPackage,
+					  @NonNull BleWriteCallback callback) {
+
 		if(!containDevice(device)) {
 			callback.onWriteFailed();
 			return;
@@ -234,7 +246,6 @@ public class DevicesManager {
 	 * @param characteristicUUID The characteristic UUID
 	 * @param callback The call back
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
 		if(!containDevice(device)) {
 			callback.onReadFailed();
@@ -248,7 +259,6 @@ public class DevicesManager {
 	 * Disconnect a device
 	 * @param device The device
 	 */
-	@SuppressWarnings("ConstantConditions")
 	public void disconnect(@NonNull BleDevice device) {
 		if(containDevice(device)) getDeviceOp(device).disconnect();
 	}
@@ -263,7 +273,7 @@ public class DevicesManager {
 	/**
 	 * Destroy all devices instances
 	 */
-	public synchronized void destroy() {
+	public void destroy() {
 		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) entry.getValue().disconnect();
 		mDevicesOp.clear();
 	}

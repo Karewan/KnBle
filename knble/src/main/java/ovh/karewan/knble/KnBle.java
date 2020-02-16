@@ -34,7 +34,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -49,76 +48,93 @@ import ovh.karewan.knble.scan.ScanSettings;
 import ovh.karewan.knble.scan.Scanner;
 import ovh.karewan.knble.struct.BleDevice;
 
-@SuppressWarnings("MissingPermission")
+@SuppressWarnings({"MissingPermission", "unused"})
 public class KnBle {
-	private static boolean mInitCorrectly = false;
-	private static WeakReference<Context> mContext;
-	private static BluetoothManager mBluetoothManager;
-	private static BluetoothAdapter mBluetoothAdapter;
-	private static Scanner mScanner;
-	private static DevicesManager mDevicesManager;
+	private WeakReference<Context> mContext;
+	private BluetoothManager mBluetoothManager;
+	private BluetoothAdapter mBluetoothAdapter;
 
-	/**
-	 * Private class constructor to prevent instantiation of this class
-	 */
 	private KnBle() {}
 
+	private static class Loader {
+		static final KnBle INSTANCE = new KnBle();
+	}
+
+	@NonNull
+	public static KnBle getInstance() {
+		return Loader.INSTANCE;
+	}
+
 	/**
-	 * Initiliaze KwBle
-	 * @param context The context
+	 * Init KnBle
+	 * @param context The application context
 	 */
-	public static void initialize(@NonNull Context context) {
-		// Destroy previous instance
-		destroy();
-
-		// Store context into weakref to avoid memory leaks
-		mContext = new WeakReference<>(context);
-
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	public void init(@NonNull Context context) {
 		// Check if device support BLE
-		if(!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-			mInitCorrectly = false;
-			return;
-		}
+		if(!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) return;
 
 		// Get the bluetooth manager service
 		mBluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-		if(mBluetoothManager == null) {
-			mInitCorrectly = false;
-			return;
-		}
+		if(mBluetoothManager == null) return;
 
 		// Get the bluetooth adapter
 		mBluetoothAdapter = mBluetoothManager.getAdapter();
-		if(mBluetoothAdapter == null) {
-			mInitCorrectly = false;
-			return;
-		}
+		if(mBluetoothAdapter == null) return;
 
 		// Init the scanner
-		mScanner = new Scanner();
+		Scanner.getInstance();
 
 		// Init the devices manager
-		mDevicesManager = new DevicesManager();
+		DevicesManager.getInstance();
 
-		// Init success
-		mInitCorrectly = true;
+		// Store context into weakref to avoid memory leaks
+		mContext = new WeakReference<>(context);
 	}
 
 	/**
-	 * Check if library is init correctly
-	 * @return mInitCorrectly
-	 */
-	public static boolean isInitCorrectly() {
-		return mInitCorrectly;
-	}
-
-	/**
-	 * Bluetooth enabled ?
+	 * Check if KnBle has been successfully initialized
 	 * @return boolean
 	 */
-	public static boolean isBluetoothEnabled() {
-		if(mBluetoothAdapter == null) return false;
+	public boolean isInit() {
+		return mContext != null && mContext.get() != null;
+	}
 
+	/**
+	 * Return context
+	 * @return Context
+	 */
+	@Nullable
+	public Context getContext() {
+		if(mContext == null) return null;
+		return mContext.get();
+	}
+
+	/**
+	 * Return bluetooth manager service
+	 * @return BluetoothManager
+	 */
+	@Nullable
+	public BluetoothManager getBluetoothManager() {
+		return mBluetoothManager;
+	}
+
+	/**
+	 * Return bluetooth adapter
+	 * @return BluetoothAdapter
+	 */
+	@Nullable
+	public BluetoothAdapter getBluetoothAdapter() {
+		return mBluetoothAdapter;
+	}
+
+	/**
+	 * Check if bluetooth adapter is enabled
+	 * @return boolean
+	 */
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
+	public boolean isBluetoothEnabled() {
+		if(mBluetoothAdapter == null) return false;
 		return mBluetoothAdapter.isEnabled();
 	}
 
@@ -126,39 +142,11 @@ public class KnBle {
 	 * Enable/Disable bluetooth
 	 * @param enable Enable or disable
 	 */
-	public static void enableBluetooth(boolean enable) {
+	public void enableBluetooth(boolean enable) {
 		if(mBluetoothAdapter == null) return;
 
 		if(enable) mBluetoothAdapter.enable();
 		else mBluetoothAdapter.disable();
-	}
-
-	/**
-	 * Get the bluetooth manager
-	 * @return BluetoothManager
-	 */
-	@Nullable
-	public static BluetoothManager getBluetoothManager() {
-		return mBluetoothManager;
-	}
-
-	/**
-	 * Get the bluetooth adapter
-	 * @return BluetoothAdapter
-	 */
-	@Nullable
-	public static BluetoothAdapter getBluetoothAdapter() {
-		return mBluetoothAdapter;
-	}
-
-	/**
-	 * Get the context
-	 * @return Context
-	 */
-	@Nullable
-	public static Context getContext() {
-		if(mContext == null) return null;
-		return mContext.get();
 	}
 
 	/**
@@ -167,7 +155,7 @@ public class KnBle {
 	 * @return BleDevice
 	 */
 	@Nullable
-	public static BleDevice getBleDeviceFromMac(@NonNull String mac) {
+	public BleDevice getBleDeviceFromMac(@NonNull String mac) {
 		if(mBluetoothAdapter == null) return null;
 
 		try {
@@ -179,60 +167,66 @@ public class KnBle {
 	}
 
 	/**
-	 * Is scanning ?
+	 * Return scanning status
 	 * @return boolean
 	 */
-	public static boolean isScanning() {
-		if(!mInitCorrectly) return false;
-		return mScanner.isScanning();
+	public boolean isScanning() {
+		return Scanner.getInstance().isScanning();
 	}
 
 	/**
 	 * Get last scan error
 	 * @return int from ScanCallback
 	 */
-	public static int getLastScanError() {
-		if(!mInitCorrectly) return BleScanCallback.NO_ERROR;
-		return mScanner.getLastError();
+	public int getLastScanError() {
+		return Scanner.getInstance().getLastError();
 	}
 
 	/**
 	 * Set the scan filter
 	 * @param scanFilter ScanFilter
 	 */
-	public static void setScanFilter(@NonNull ScanFilters scanFilter) {
-		if(!mInitCorrectly) return;
-		mScanner.setScanFilter(scanFilter);
+	public void setScanFilter(@NonNull ScanFilters scanFilter) {
+		Scanner.getInstance().setScanFilter(scanFilter);
+	}
+
+	/**
+	 * Return current ScanFilters
+	 * @return ScanFilters
+	 */
+	public ScanFilters getScanFilters() {
+		return Scanner.getInstance().getScanFilters();
 	}
 
 	/**
 	 * Set the scan settings
 	 * @param scanSettings ScanSettings
 	 */
-	public static void setScanSettings(@NonNull ScanSettings scanSettings) {
-		if(!mInitCorrectly) return;
-		mScanner.setScanSettings(scanSettings);
+	public void setScanSettings(@NonNull ScanSettings scanSettings) {
+		Scanner.getInstance().setScanSettings(scanSettings);
+	}
+
+	/**
+	 * Return current ScanSettings
+	 * @return ScanSettings
+	 */
+	public ScanSettings getScanSettings() {
+		return Scanner.getInstance().getScanSettings();
 	}
 
 	/**
 	 * Start devices scan
 	 * @param callback BleScanCallback
 	 */
-	public static void startScan(@NonNull BleScanCallback callback) {
-		if(!mInitCorrectly) {
-			callback.onScanFailed(BleScanCallback.BT_DISABLED);
-			return;
-		}
-
-		mScanner.startScan(callback);
+	public void startScan(@NonNull BleScanCallback callback) {
+		Scanner.getInstance().startScan(callback);
 	}
 
 	/**
 	 * Stop devices scan
 	 */
-	public static void stopScan() {
-		if(!mInitCorrectly) return;
-		mScanner.stopScan();
+	public void stopScan() {
+		Scanner.getInstance().stopScan();
 	}
 
 	/**
@@ -240,9 +234,24 @@ public class KnBle {
 	 * @return mScannedDevices
 	 */
 	@NonNull
-	public static HashMap<String, BleDevice> getScannedDevices() {
-		if(!mInitCorrectly) return new HashMap<>();
-		return mScanner.getScannedDevices();
+	public HashMap<String, BleDevice> getScannedDevices() {
+		return Scanner.getInstance().getScannedDevices();
+	}
+
+	/**
+	 * Clear scanned devices list
+	 */
+	public void clearScannedDevices() {
+		Scanner.getInstance().clearScannedDevices();
+	}
+
+	/**
+	 * Stop and reset devices scan
+	 * @param resetSettings Reset settings
+	 * @param resetFilters Reset filters
+ 	 */
+	public void resetScan(boolean resetSettings, boolean resetFilters) {
+		Scanner.getInstance().reset(resetSettings, resetFilters);
 	}
 
 	/**
@@ -250,9 +259,8 @@ public class KnBle {
 	 * @return Connected devices
 	 */
 	@NonNull
-	public static List<BleDevice> getConnectedDevices() {
-		if(!mInitCorrectly) return new ArrayList<>();
-		return mDevicesManager.getConnectedDevices();
+	public List<BleDevice> getConnectedDevices() {
+		return DevicesManager.getInstance().getConnectedDevices();
 	}
 
 	/**
@@ -260,9 +268,8 @@ public class KnBle {
 	 * @param device The device
 	 * @return boolean
 	 */
-	public static boolean isConnected(@NonNull BleDevice device) {
-		if(!mInitCorrectly) return false;
-		return mDevicesManager.isConnected(device);
+	public boolean isConnected(@NonNull BleDevice device) {
+		return DevicesManager.getInstance().isConnected(device);
 	}
 
 	/**
@@ -270,9 +277,8 @@ public class KnBle {
 	 * @param device The device
 	 * @return The state
 	 */
-	public static int getDeviceConnState(@NonNull BleDevice device) {
-		if(!mInitCorrectly) return BleGattCallback.DISCONNECTED;
-		return mDevicesManager.getDeviceState(device);
+	public int getDeviceConnState(@NonNull BleDevice device) {
+		return DevicesManager.getInstance().getDeviceState(device);
 	}
 
 	/**
@@ -280,9 +286,8 @@ public class KnBle {
 	 * @param device The device
 	 * @return The last gatt status
 	 */
-	public static int getLastGattStatusOfDevice(@NonNull BleDevice device) {
-		if(!mInitCorrectly) return 0;
-		return mDevicesManager.getLastGattStatusOfDevice(device);
+	public int getLastGattStatusOfDevice(@NonNull BleDevice device) {
+		return DevicesManager.getInstance().getLastGattStatusOfDevice(device);
 	}
 
 	/**
@@ -290,13 +295,13 @@ public class KnBle {
 	 * @param device The device
 	 * @param callback The callback
 	 */
-	public static void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
-		if(!mInitCorrectly) {
+	public void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
+		if(!isInit()) {
 			callback.onConnectFailed();
 			return;
 		}
 
-		mDevicesManager.connect(device, callback);
+		DevicesManager.getInstance().connect(device, callback);
 	}
 
 	/**
@@ -304,9 +309,8 @@ public class KnBle {
 	 * @param device The device
 	 * @param connectionPriority The connection priority
 	 */
-	public static void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
-		if(!mInitCorrectly) return;
-		mDevicesManager.requestConnectionPriority(device, connectionPriority);
+	public void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
+		DevicesManager.getInstance().requestConnectionPriority(device, connectionPriority);
 	}
 
 	/**
@@ -315,9 +319,8 @@ public class KnBle {
 	 * @param serviceUUID The service UUID
 	 * @param callback The callback
 	 */
-	public static void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
-		if(!mInitCorrectly) return;
-		mDevicesManager.hasService(device, serviceUUID, callback);
+	public void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
+		DevicesManager.getInstance().hasService(device, serviceUUID, callback);
 	}
 
 	/**
@@ -327,9 +330,8 @@ public class KnBle {
 	 * @param characteristicUUID The characteristic UUID
 	 * @param callback The callback
 	 */
-	public static void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
-		if(!mInitCorrectly) return;
-		mDevicesManager.hasCharacteristic(device, serviceUUID, characteristicUUID, callback);
+	public void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
+		DevicesManager.getInstance().hasCharacteristic(device, serviceUUID, characteristicUUID, callback);
 	}
 
 	/**
@@ -337,9 +339,8 @@ public class KnBle {
 	 * @param device The device
 	 * @param callback The callback
 	 */
-	public static void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
-		if(!mInitCorrectly) return;
-		mDevicesManager.setGattCallback(device, callback);
+	public void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
+		DevicesManager.getInstance().setGattCallback(device, callback);
 	}
 
 	/**
@@ -350,7 +351,12 @@ public class KnBle {
 	 * @param data The data
 	 * @param callback The callback
 	 */
-	public static void write(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull byte[] data, @NonNull BleWriteCallback callback) {
+	public void write(@NonNull BleDevice device,
+					  @NonNull String serviceUUID,
+					  @NonNull String characteristicUUID,
+					  @NonNull byte[] data,
+					  @NonNull BleWriteCallback callback) {
+
 		write(device, serviceUUID, characteristicUUID, data, true, 20, true, 0, callback);
 	}
 
@@ -366,13 +372,17 @@ public class KnBle {
 	 * @param intervalBetweenTwoPackage Interval between two package
 	 * @param callback The callback
 	 */
-	public static void write(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull byte[] data, boolean split, int spliteSize, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleWriteCallback callback) {
-		if(!mInitCorrectly) {
-			callback.onWriteFailed();
-			return;
-		}
+	public void write(@NonNull BleDevice device,
+					  @NonNull String serviceUUID,
+					  @NonNull String characteristicUUID,
+					  @NonNull byte[] data,
+					  boolean split,
+					  int spliteSize,
+					  boolean sendNextWhenLastSuccess,
+					  long intervalBetweenTwoPackage,
+					  @NonNull BleWriteCallback callback) {
 
-		mDevicesManager.write(device, serviceUUID, characteristicUUID, data, split, spliteSize, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback);
+		DevicesManager.getInstance().write(device, serviceUUID, characteristicUUID, data, split, spliteSize, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback);
 	}
 
 	/**
@@ -382,54 +392,29 @@ public class KnBle {
 	 * @param characteristicUUID The characteristic UUID
 	 * @param callback The call back
 	 */
-	public static void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
-		if(!mInitCorrectly) {
-			callback.onReadFailed();
-			return;
-		}
-
-		mDevicesManager.read(device, serviceUUID, characteristicUUID, callback);
+	public void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
+		DevicesManager.getInstance().read(device, serviceUUID, characteristicUUID, callback);
 	}
 
 	/**
 	 * Disconnect a device
 	 * @param device The device
 	 */
-	public static void disconnect(@NonNull BleDevice device) {
-		if(!mInitCorrectly) return;
-		mDevicesManager.disconnect(device);
+	public void disconnect(@NonNull BleDevice device) {
+		DevicesManager.getInstance().disconnect(device);
 	}
 
 	/**
 	 * Disconnect all devices
 	 */
-	public static void disconnectAll() {
-		if(!mInitCorrectly) return;
-		mDevicesManager.disconnectAll();
+	public void disconnectAll() {
+		DevicesManager.getInstance().disconnectAll();
 	}
 
 	/**
-	 * Destroy and cleanup
+	 * Destroy all devices instances
 	 */
-	public static void destroy() {
-		// Un-init
-		mInitCorrectly = false;
-
-		// Destroy the scanner
-		if(mScanner != null) {
-			mScanner.destroy();
-			mScanner = null;
-		}
-
-		// Disconnect all devices and cleanup
-		if(mDevicesManager != null) {
-			mDevicesManager.destroy();
-			mDevicesManager = null;
-		}
-
-		// Cleanup
-		mBluetoothAdapter = null;
-		mBluetoothManager = null;
-		mContext = null;
+	public void destroyAllDevices() {
+		DevicesManager.getInstance().destroy();
 	}
 }

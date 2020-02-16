@@ -1,6 +1,14 @@
 KnBle Change Log
 ==========
 
+Version 2.0.0 *(2020-02-16)*
+----------------------------
+
+- BleDevices are now updated when scanning (recreated before)
+- Better instance management
+- Better performances
+- Bugs fix
+
 Version 1.0.1 *(2020-02-14)*
 ----------------------------
 

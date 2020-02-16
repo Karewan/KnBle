@@ -48,6 +48,13 @@ public class BleDevice {
 		this.mTimestamp = timestamp;
 	}
 
+	public synchronized void updateDevice(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] scanRecord, long timestamp) {
+		this.mDevice = device;
+		this.mRssi = rssi;
+		this.mScanRecord = scanRecord;
+		this.mTimestamp = timestamp;
+	}
+
 	@NonNull
 	public BluetoothDevice getDevice() {
 		return mDevice;

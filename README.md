@@ -23,7 +23,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:1.0.1'
+	implementation 'com.github.Karewan:KnBle:2.0.0'
 }
 ```
 
@@ -36,7 +36,7 @@ dependencies {
 ```
 
 ```java
-KnBle.initialize(getApplicationContext());
+KnBle.getInstance().init(getApplicationContext());
 ```
 
 ### License
