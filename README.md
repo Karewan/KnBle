@@ -52,7 +52,7 @@ boolean isInit = KnBle.getInstance().isInit();
 
 #### Start scan
 ```java
-bleScanCallback = new BleScanCallback() {
+KnBle.getInstance().startScan(new BleScanCallback() {
 	@Override
 	public void onScanStarted() {
 
@@ -76,14 +76,28 @@ bleScanCallback = new BleScanCallback() {
 	public void onScanFinished(@NonNull HashMap<String, BleDevice> scanResult) {
 
 	}
-};
-
-KnBle.getInstance().startScan(bleScanCallback);
+});
 ```
 
 #### Stop scan
 ```java
 KnBle.getInstance().stopScan();
+```
+
+#### Set scan settings (before start scan)
+```java
+// Check ScanSettings class to see all settings
+ScanSettings settings = new ScanSettings.Builder().build();
+
+KnBle.getInstance().setScanSettings(settings);
+```
+
+#### Set scan filters (before start scan)
+```java
+// Check ScanFilters class to see all filters
+ScanFilters filters = new ScanFilters.Builder().build();
+
+KnBle.getInstance().setScanFilter(filters);
 ```
 
 #### Check if currently scanning
@@ -126,6 +140,159 @@ KnBle.getInstance().resetScan(true, true);
 #### Get device from MAC address
 ```java
 BleDevice device = KnBle.getInstance().getBleDeviceFromMac("FF:FF:FF:FF:FF:FF");
+```
+
+#### Get list of connected devices
+```java
+List<BleDevice> devices = KnBle.getInstance().getConnectedDevices();
+```
+
+#### Check if device is connected
+```java
+boolean connected = KnBle.getInstance().isConnected(device);
+```
+
+#### Connect to a device
+```java
+KnBle.getInstance().connect(device, new BleGattCallback() {
+	@Override
+	public void onConnecting() {
+		
+	}
+
+	@Override
+	public void onConnectFailed() {
+
+	}
+
+	@Override
+	public void onConnectSuccess(List<BluetoothGattService> services) {
+
+	}
+
+	@Override
+	public void onDisconnected() {
+
+	}
+});
+```
+
+#### Check if device has a gatt service
+```java
+KnBle.getInstance().hasService(device, "service uuid",  new BleCheckCallback() {
+	@Override
+	public void onResponse(boolean res) {
+		
+	}
+});
+```
+
+#### Check if device has a gatt characteristic
+```java
+KnBle.getInstance().hasCharacteristic(device, "service uuid", "characteristic uuid",  new BleCheckCallback() {
+	@Override
+	public void onResponse(boolean res) {
+		
+	}
+});
+```
+
+#### Write data in gatt characteristic
+```java
+KnBle.getInstance().write(device, "service uuid", "characteristic uuid", data, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+		
+	}
+
+	@Override
+	public void onWriteProgress(int current, int total) {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+
+// OR
+
+// true=split data
+// 20=split into packet of
+// true=if true send when android set last packet sent as success else send immediately
+// 25=interval between two packet
+KnBle.getInstance().write(device, "service uuid", "characteristic uuid", data, true, 20, true, 25, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+
+	}
+
+	@Override
+	public void onWriteProgress(int current, int total) {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+
+```
+
+#### Read gatt characteristic data
+```java
+KnBle.getInstance().read(device, "service uuid", "characteristic uuid", new BleReadCallback() {
+	@Override
+	public void onReadSuccess(byte[] data) {
+
+	}
+
+	@Override
+	public void onReadFailed() {
+
+	}
+});
+```
+
+#### Request connection priority
+```java
+KnBle.getInstance().requestConnectionPriority(device, connectionPriority);
+```
+
+#### Change BleGattCallback of a device
+```java
+KnBle.getInstance().setGattCallback(device, newCallback);
+```
+
+#### Disconnect a device
+```java
+KnBle.getInstance().disconnect(device);
+```
+
+#### Disconnect all devices
+```java
+KnBle.getInstance().disconnectAll();
+```
+
+#### Get device connection state
+```java
+int state = KnBle.getInstance().getDeviceConnState(device);
+
+// BleGattCallback.DISCONNECTED
+// BleGattCallback.CONNECTING
+// BleGattCallback.CONNECTED
+```
+
+#### Get last gatt status code of a device
+```java
+int status = KnBle.getInstance().getLastGattStatusOfDevice(device);
+```
+
+#### Destroy all devices instances
+```java
+KnBle.getInstance().destroyAllDevices();
 ```
 
 ## Others operations
