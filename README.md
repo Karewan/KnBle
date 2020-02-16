@@ -3,7 +3,9 @@
 [![](https://jitpack.io/v/Karewan/KnBle.svg)](https://jitpack.io/#Karewan/KnBle)
 [![API](https://img.shields.io/badge/API-19%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=19)
 
-### Installation
+A simple BLE Android client
+
+## Installation
 
 ```groovy
 allprojects {
@@ -27,6 +29,7 @@ dependencies {
 }
 ```
 
+Do not forget to add internet permissions in manifest
 ```xml
 <uses-permission android:name="android.permission.BLUETOOTH"/>
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
@@ -35,11 +38,127 @@ dependencies {
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 ```
 
+Then initialize
 ```java
 KnBle.getInstance().init(getApplicationContext());
 ```
 
-### License
+Verify is init correctly, return false if device is not BLE compatible
+```java
+boolean isInit = KnBle.getInstance().isInit();
+```
+
+## Scanning operations
+
+#### Start scan
+```java
+bleScanCallback = new BleScanCallback() {
+	@Override
+	public void onScanStarted() {
+
+	}
+
+	@Override
+	public void onScanFailed(int error) {
+		// BleScanCallback.BT_DISABLED
+		// BleScanCallback.LOCATION_DISABLED
+		// BleScanCallback.SCANNER_UNAVAILABLE
+		// BleScanCallback.UNKNOWN_ERROR
+		// BleScanCallback.SCAN_FEATURE_UNSUPPORTED
+	}
+
+	@Override
+	public void onScanResult(@NonNull BleDevice bleDevice) {
+
+	}
+
+	@Override
+	public void onScanFinished(@NonNull HashMap<String, BleDevice> scanResult) {
+
+	}
+};
+
+KnBle.getInstance().startScan(bleScanCallback);
+```
+
+#### Stop scan
+```java
+KnBle.getInstance().stopScan();
+```
+
+#### Check if currently scanning
+```java
+boolean isScanning = KnBle.getInstance().isScanning();
+```
+
+#### Get last scan error
+```java
+int error = KnBle.getInstance().getLastError();
+```
+
+#### Get current scan settings
+```java
+ScanSettings settings = KnBle.getInstance().getScanSettings();
+```
+
+#### Get current scan filters
+```java
+ScanFilters filters = KnBle.getInstance().getScanFilters();
+```
+
+#### Get all scanned devices (string is the mac address)
+```java
+HashMap<String, BleDevice> devices = KnBle.getInstance().getScannedDevices();
+```
+
+#### Clear scanned devices
+```java
+KnBle.getInstance().clearScannedDevices();
+```
+
+#### Stop and reset scan completely (boolean resetSettings, boolean resetFilters)
+```java
+KnBle.getInstance().resetScan(true, true);
+```
+
+## Device operations
+
+#### Get device from MAC address
+```java
+BleDevice device = KnBle.getInstance().getBleDeviceFromMac("FF:FF:FF:FF:FF:FF");
+```
+
+## Others operations
+
+#### Check if bluetooth adapter is enabled
+```java
+boolean enabled = KnBle.getInstance().isBluetoothEnabled();
+```
+
+#### Enable/Disable bluetooth adapter
+```java
+// Enable
+KnBle.getInstance().enableBluetooth(true);
+// Disable
+KnBle.getInstance().enableBluetooth(false);
+```
+
+#### Get the bluetooth adapter
+```java
+BluetoothAdapter adapter = KnBle.getInstance().getBluetoothAdapter();
+```
+
+#### Get the bluetooth manager service
+```java
+BluetoothManager btManager = KnBle.getInstance().getBluetoothManager();
+```
+
+#### Get KnBle context
+```java
+Context ctx = KnBle.getInstance().getContext();
+```
+
+## License
 ```
 The MIT License (MIT)
 
