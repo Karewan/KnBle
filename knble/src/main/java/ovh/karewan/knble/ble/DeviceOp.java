@@ -638,7 +638,7 @@ public class DeviceOp {
 	 * Disconnect the device
 	 */
 
-	@SuppressWarnings({"JavaReflectionMemberAccess"})
+	@SuppressWarnings({"JavaReflectionMemberAccess", "rawtypes"})
 	public void disconnect() {
 		Log.d(LOG, "disconnect");
 

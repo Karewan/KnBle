@@ -113,7 +113,7 @@ public class Utils {
 			if (data.length % spliteSize == 0) {
 				pkgCount = data.length / spliteSize;
 			} else {
-				pkgCount = Math.round(data.length / spliteSize + 1);
+				pkgCount = Math.round((float) (data.length / spliteSize + 1));
 			}
 		}
 

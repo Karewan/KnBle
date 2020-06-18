@@ -357,7 +357,7 @@ public class KnBle {
 					  @NonNull byte[] data,
 					  @NonNull BleWriteCallback callback) {
 
-		write(device, serviceUUID, characteristicUUID, data, true, 20, true, 0, callback);
+		write(device, serviceUUID, characteristicUUID, data, false, 20, true, 0, callback);
 	}
 
 	/**

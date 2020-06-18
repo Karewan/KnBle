@@ -1,6 +1,13 @@
 KnBle Change Log
 ==========
 
+Version 2.0.1 *(2020-06-18)*
+----------------------------
+
+- Disable data split by default on write operations
+- Bump gradle plugin to 4.0.0
+- Bump gradle to 6.1.1
+
 Version 2.0.0 *(2020-02-16)*
 ----------------------------
 
