@@ -53,6 +53,7 @@ public class KnBle {
 	private WeakReference<Context> mContext;
 	private BluetoothManager mBluetoothManager;
 	private BluetoothAdapter mBluetoothAdapter;
+	public static volatile boolean DEBUG = BuildConfig.BUILD_TYPE.equals("debug");
 
 	private KnBle() {}
 
@@ -96,6 +97,7 @@ public class KnBle {
 	 * Check if KnBle has been successfully initialized
 	 * @return boolean
 	 */
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isInit() {
 		return mContext != null && mContext.get() != null;
 	}
@@ -311,6 +313,24 @@ public class KnBle {
 	 */
 	public void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
 		DevicesManager.getInstance().requestConnectionPriority(device, connectionPriority);
+	}
+
+	/**
+	 * Request MTU
+	 * @param device The device
+	 * @param mtu The MTU
+	 */
+	public void requestMtu(@NonNull BleDevice device, int mtu) {
+		DevicesManager.getInstance().requestMtu(device, mtu);
+	}
+
+	/**
+	 * Get MTU of a device
+	 * @param device The device
+	 * @return The MTU
+	 */
+	public int getMtu(@NonNull BleDevice device) {
+		return DevicesManager.getInstance().getMtu(device);
 	}
 
 	/**

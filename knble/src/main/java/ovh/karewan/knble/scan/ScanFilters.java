@@ -76,9 +76,9 @@ public class ScanFilters {
 	 * Builder
 	 */
 	public static final class Builder {
-		private List<String> mDevicesNames = new ArrayList<>();
-		private List<String> mDevicesMacs = new ArrayList<>();
-		private List<Integer> mManufacturerIds = new ArrayList<>();
+		private final List<String> mDevicesNames = new ArrayList<>();
+		private final List<String> mDevicesMacs = new ArrayList<>();
+		private final List<Integer> mManufacturerIds = new ArrayList<>();
 
 		public Builder addDeviceName(@Nullable String deviceName) {
 			this.mDevicesNames.add(deviceName);

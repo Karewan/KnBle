@@ -167,6 +167,26 @@ public class DevicesManager {
 	}
 
 	/**
+	 * Request MTU
+	 * @param device The device
+	 * @param mtu The MTU
+	 */
+	public void requestMtu(@NonNull BleDevice device, int mtu) {
+		if(!containDevice(device)) return;
+		getDeviceOp(device).requestMtu(mtu);
+	}
+
+	/**
+	 * Return MTU of a device
+	 * @param device The device
+	 * @return The MTU
+	 */
+	public int getMtu(@NonNull BleDevice device) {
+		if(!containDevice(device)) return 0;
+		return getDeviceOp(device).getMtu();
+	}
+
+	/**
 	 * Connect to a device
 	 * @param device The device
 	 * @param callback The callback

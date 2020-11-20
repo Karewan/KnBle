@@ -1,6 +1,14 @@
 KnBle Change Log
 ==========
 
+Version 2.0.2 *(2020-11-20)*
+----------------------------
+- Add requestMtu and getMtu methods
+- Add DEBUG flag
+- Bump min API to 21
+- Bump gradle plugin to 4.1.1
+- Bump gradle to 6.5
+
 Version 2.0.1 *(2020-06-18)*
 ----------------------------
 

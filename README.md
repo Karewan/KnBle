@@ -1,7 +1,7 @@
 # KnBle
 
 [![](https://jitpack.io/v/Karewan/KnBle.svg)](https://jitpack.io/#Karewan/KnBle)
-[![API](https://img.shields.io/badge/API-19%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=19)
+[![API](https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=21)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A simple BLE Android client
@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.0.1'
+	implementation 'com.github.Karewan:KnBle:2.0.2'
 }
 ```
 
@@ -158,7 +158,7 @@ boolean connected = KnBle.getInstance().isConnected(device);
 KnBle.getInstance().connect(device, new BleGattCallback() {
 	@Override
 	public void onConnecting() {
-		
+
 	}
 
 	@Override
@@ -183,7 +183,7 @@ KnBle.getInstance().connect(device, new BleGattCallback() {
 KnBle.getInstance().hasService(device, "service uuid",  new BleCheckCallback() {
 	@Override
 	public void onResponse(boolean res) {
-		
+
 	}
 });
 ```
@@ -193,7 +193,7 @@ KnBle.getInstance().hasService(device, "service uuid",  new BleCheckCallback() {
 KnBle.getInstance().hasCharacteristic(device, "service uuid", "characteristic uuid",  new BleCheckCallback() {
 	@Override
 	public void onResponse(boolean res) {
-		
+
 	}
 });
 ```
@@ -203,7 +203,7 @@ KnBle.getInstance().hasCharacteristic(device, "service uuid", "characteristic uu
 KnBle.getInstance().write(device, "service uuid", "characteristic uuid", data, new BleWriteCallback() {
 	@Override
 	public void onWriteFailed() {
-		
+
 	}
 
 	@Override
@@ -260,6 +260,16 @@ KnBle.getInstance().read(device, "service uuid", "characteristic uuid", new BleR
 #### Request connection priority
 ```java
 KnBle.getInstance().requestConnectionPriority(device, connectionPriority);
+```
+
+#### Request MTU change
+```java
+KnBle.getInstance().requestMtu(device, mtu);
+```
+
+#### Get current MTU
+```java
+int mtu = KnBle.getInstance().getMtu(device);
 ```
 
 #### Change BleGattCallback of a device
@@ -324,6 +334,11 @@ BluetoothManager btManager = KnBle.getInstance().getBluetoothManager();
 #### Get KnBle context
 ```java
 Context ctx = KnBle.getInstance().getContext();
+```
+
+#### Toggle DEBUG
+```java
+KnBle.DEBUG = false;
 ```
 
 ## License
