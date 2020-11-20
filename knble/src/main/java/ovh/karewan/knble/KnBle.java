@@ -53,7 +53,7 @@ public class KnBle {
 	private WeakReference<Context> mContext;
 	private BluetoothManager mBluetoothManager;
 	private BluetoothAdapter mBluetoothAdapter;
-	public static volatile boolean DEBUG = BuildConfig.BUILD_TYPE.equals("debug");
+	public static volatile boolean DEBUG = false;
 
 	private KnBle() {}
 
