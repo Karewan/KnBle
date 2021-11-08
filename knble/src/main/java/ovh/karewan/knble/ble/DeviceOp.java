@@ -405,9 +405,9 @@ public class DeviceOp {
 			int delayBeforeConnect = 0;
 
 			// Enable bluetooth if not enabled
-			if(!KnBle.getInstance().isBluetoothEnabled()) {
+			if(!KnBle.gi().isBluetoothEnabled()) {
 				if(KnBle.DEBUG) Log.d(LOG, "bluetooth is disabled");
-				KnBle.getInstance().enableBluetooth(true);
+				KnBle.gi().enableBluetooth(true);
 				delayBeforeConnect += 5000;
 			}
 
@@ -422,20 +422,20 @@ public class DeviceOp {
 				// Always connect with autoConnect==false for better connection speed
 				// Android 6+ (Connect with TRANSPORT_LE)
 				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-					setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.getInstance().getContext(), false, mBluetoothGattCallback, BluetoothDevice.TRANSPORT_LE));
+					setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.gi().getContext(), false, mBluetoothGattCallback, BluetoothDevice.TRANSPORT_LE));
 				} else {
 					// Android 5.0+ (Connect with reflection method for getting TRANSPORT_LE before Android 6.0)
 					try {
 						Method connectGattMethod = mDevice.getDevice().getClass().getDeclaredMethod("connectGatt", Context.class, boolean.class, BluetoothGattCallback.class, int.class);
 						connectGattMethod.setAccessible(true);
-						setBluetoothGatt((BluetoothGatt) connectGattMethod.invoke(mDevice.getDevice(), KnBle.getInstance().getContext(), false, mBluetoothGattCallback, 2));
+						setBluetoothGatt((BluetoothGatt) connectGattMethod.invoke(mDevice.getDevice(), KnBle.gi().getContext(), false, mBluetoothGattCallback, 2));
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}
 
 				// If other methods have failed
-				if(mBluetoothGatt == null) setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.getInstance().getContext(), false, mBluetoothGattCallback));
+				if(mBluetoothGatt == null) setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.gi().getContext(), false, mBluetoothGattCallback));
 
 				// All method have failed
 				if(mBluetoothGatt == null) {
