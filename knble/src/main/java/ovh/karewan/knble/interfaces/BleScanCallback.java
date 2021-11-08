@@ -57,6 +57,12 @@ public interface BleScanCallback {
 	void onScanResult(@NonNull BleDevice bleDevice);
 
 	/**
+	 * onDeviceUpdated
+	 * @param bleDevice Updated device
+	 */
+	void onDeviceUpdated(@NonNull BleDevice bleDevice);
+	
+	/**
 	 * onScanFinished
 	 * @param scanResult List with all discovered devices
 	 */
