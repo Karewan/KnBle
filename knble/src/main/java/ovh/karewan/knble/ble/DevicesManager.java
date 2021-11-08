@@ -41,18 +41,26 @@ import ovh.karewan.knble.struct.BleDevice;
 
 @SuppressWarnings("ConstantConditions")
 public class DevicesManager {
+	private static volatile DevicesManager sInstance;
+	
 	// Devices OP container
 	private final HashMap<String, DeviceOp> mDevicesOp = new HashMap<>();
 
 	private DevicesManager() {}
 
-	private static class Loader {
-		static final DevicesManager INSTANCE = new DevicesManager();
-	}
-
+	/**
+	 * Get instance
+	 * @return DevicesManager
+	 */
 	@NonNull
-	public static DevicesManager getInstance() {
-		return Loader.INSTANCE;
+	public static DevicesManager gi() {
+		if(sInstance == null) {
+			synchronized(DevicesManager.class) {
+				if(sInstance == null) sInstance = new DevicesManager();
+			}
+		}
+
+		return sInstance;
 	}
 
 	/**
