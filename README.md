@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.2.0'
+	implementation 'com.github.Karewan:KnBle:2.2.1'
 }
 ```
 
@@ -70,6 +70,11 @@ KnBle.gi().startScan(new BleScanCallback() {
 
 	@Override
 	public void onScanResult(@NonNull BleDevice bleDevice) {
+
+	}
+	
+	@Override
+	public void onUpdatedDevice(@NonNull BleDevice bleDevice) {
 
 	}
 
