@@ -430,8 +430,12 @@ public class Scanner {
 		} else {
 			// Update device already in hashmap
 			BleDevice bleDevice = mScannedDevices.get(device.getAddress());
+			
 			//noinspection ConstantConditions
 			bleDevice.updateDevice(device, rssi, scanRecord, System.currentTimeMillis());
+			
+			// Notify the UI
+			if(mCallback != null) mCallback.onDeviceUpdated(bleDevice);
 		}
 	}
 
