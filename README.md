@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.0.2-fix'
+	implementation 'com.github.Karewan:KnBle:2.0.3'
 }
 ```
 
@@ -41,19 +41,19 @@ Do not forget to add internet permissions in manifest
 
 Then initialize
 ```java
-KnBle.getInstance().init(getApplicationContext());
+boolean success = KnBle.gi().init(getApplicationContext());
 ```
 
 Verify is init correctly, return false if device is not BLE compatible
 ```java
-boolean isInit = KnBle.getInstance().isInit();
+boolean isInit = KnBle.gi().isInit();
 ```
 
 ## Scanning operations
 
 #### Start scan
 ```java
-KnBle.getInstance().startScan(new BleScanCallback() {
+KnBle.gi().startScan(new BleScanCallback() {
 	@Override
 	public void onScanStarted() {
 
@@ -82,7 +82,7 @@ KnBle.getInstance().startScan(new BleScanCallback() {
 
 #### Stop scan
 ```java
-KnBle.getInstance().stopScan();
+KnBle.gi().stopScan();
 ```
 
 #### Set scan settings (before start scan)
@@ -90,7 +90,7 @@ KnBle.getInstance().stopScan();
 // Check ScanSettings class to see all settings
 ScanSettings settings = new ScanSettings.Builder().build();
 
-KnBle.getInstance().setScanSettings(settings);
+KnBle.gi().setScanSettings(settings);
 ```
 
 #### Set scan filters (before start scan)
@@ -98,64 +98,64 @@ KnBle.getInstance().setScanSettings(settings);
 // Check ScanFilters class to see all filters
 ScanFilters filters = new ScanFilters.Builder().build();
 
-KnBle.getInstance().setScanFilter(filters);
+KnBle.gi().setScanFilter(filters);
 ```
 
 #### Check if currently scanning
 ```java
-boolean isScanning = KnBle.getInstance().isScanning();
+boolean isScanning = KnBle.gi().isScanning();
 ```
 
 #### Get last scan error
 ```java
-int error = KnBle.getInstance().getLastError();
+int error = KnBle.gi().getLastError();
 ```
 
 #### Get current scan settings
 ```java
-ScanSettings settings = KnBle.getInstance().getScanSettings();
+ScanSettings settings = KnBle.gi().getScanSettings();
 ```
 
 #### Get current scan filters
 ```java
-ScanFilters filters = KnBle.getInstance().getScanFilters();
+ScanFilters filters = KnBle.gi().getScanFilters();
 ```
 
 #### Get all scanned devices (string is the mac address)
 ```java
-HashMap<String, BleDevice> devices = KnBle.getInstance().getScannedDevices();
+HashMap<String, BleDevice> devices = KnBle.gi().getScannedDevices();
 ```
 
 #### Clear scanned devices
 ```java
-KnBle.getInstance().clearScannedDevices();
+KnBle.gi().clearScannedDevices();
 ```
 
 #### Stop and reset scan completely (boolean resetSettings, boolean resetFilters)
 ```java
-KnBle.getInstance().resetScan(true, true);
+KnBle.gi().resetScan(true, true);
 ```
 
 ## Device operations
 
 #### Get device from MAC address
 ```java
-BleDevice device = KnBle.getInstance().getBleDeviceFromMac("FF:FF:FF:FF:FF:FF");
+BleDevice device = KnBle.gi().getBleDeviceFromMac("FF:FF:FF:FF:FF:FF");
 ```
 
 #### Get list of connected devices
 ```java
-List<BleDevice> devices = KnBle.getInstance().getConnectedDevices();
+List<BleDevice> devices = KnBle.gi().getConnectedDevices();
 ```
 
 #### Check if device is connected
 ```java
-boolean connected = KnBle.getInstance().isConnected(device);
+boolean connected = KnBle.gi().isConnected(device);
 ```
 
 #### Connect to a device
 ```java
-KnBle.getInstance().connect(device, new BleGattCallback() {
+KnBle.gi().connect(device, new BleGattCallback() {
 	@Override
 	public void onConnecting() {
 
@@ -180,7 +180,7 @@ KnBle.getInstance().connect(device, new BleGattCallback() {
 
 #### Check if device has a gatt service
 ```java
-KnBle.getInstance().hasService(device, "service uuid",  new BleCheckCallback() {
+KnBle.gi().hasService(device, "service uuid",  new BleCheckCallback() {
 	@Override
 	public void onResponse(boolean res) {
 
@@ -190,7 +190,7 @@ KnBle.getInstance().hasService(device, "service uuid",  new BleCheckCallback() {
 
 #### Check if device has a gatt characteristic
 ```java
-KnBle.getInstance().hasCharacteristic(device, "service uuid", "characteristic uuid",  new BleCheckCallback() {
+KnBle.gi().hasCharacteristic(device, "service uuid", "characteristic uuid",  new BleCheckCallback() {
 	@Override
 	public void onResponse(boolean res) {
 
@@ -200,7 +200,7 @@ KnBle.getInstance().hasCharacteristic(device, "service uuid", "characteristic uu
 
 #### Write data in gatt characteristic
 ```java
-KnBle.getInstance().write(device, "service uuid", "characteristic uuid", data, new BleWriteCallback() {
+KnBle.gi().write(device, "service uuid", "characteristic uuid", data, new BleWriteCallback() {
 	@Override
 	public void onWriteFailed() {
 
@@ -223,7 +223,7 @@ KnBle.getInstance().write(device, "service uuid", "characteristic uuid", data, n
 // 20=split into packet of
 // true=if true send when android set last packet sent as success else send immediately
 // 25=interval between two packet
-KnBle.getInstance().write(device, "service uuid", "characteristic uuid", data, true, 20, true, 25, new BleWriteCallback() {
+KnBle.gi().write(device, "service uuid", "characteristic uuid", data, true, 20, true, 25, new BleWriteCallback() {
 	@Override
 	public void onWriteFailed() {
 
@@ -244,7 +244,7 @@ KnBle.getInstance().write(device, "service uuid", "characteristic uuid", data, t
 
 #### Read gatt characteristic data
 ```java
-KnBle.getInstance().read(device, "service uuid", "characteristic uuid", new BleReadCallback() {
+KnBle.gi().read(device, "service uuid", "characteristic uuid", new BleReadCallback() {
 	@Override
 	public void onReadSuccess(byte[] data) {
 
@@ -259,37 +259,37 @@ KnBle.getInstance().read(device, "service uuid", "characteristic uuid", new BleR
 
 #### Request connection priority
 ```java
-KnBle.getInstance().requestConnectionPriority(device, connectionPriority);
+KnBle.gi().requestConnectionPriority(device, connectionPriority);
 ```
 
 #### Request MTU change
 ```java
-KnBle.getInstance().requestMtu(device, mtu);
+KnBle.gi().requestMtu(device, mtu);
 ```
 
 #### Get current MTU
 ```java
-int mtu = KnBle.getInstance().getMtu(device);
+int mtu = KnBle.gi().getMtu(device);
 ```
 
 #### Change BleGattCallback of a device
 ```java
-KnBle.getInstance().setGattCallback(device, newCallback);
+KnBle.gi().setGattCallback(device, newCallback);
 ```
 
 #### Disconnect a device
 ```java
-KnBle.getInstance().disconnect(device);
+KnBle.gi().disconnect(device);
 ```
 
 #### Disconnect all devices
 ```java
-KnBle.getInstance().disconnectAll();
+KnBle.gi().disconnectAll();
 ```
 
 #### Get device connection state
 ```java
-int state = KnBle.getInstance().getDeviceConnState(device);
+int state = KnBle.gi().getDeviceConnState(device);
 
 // BleGattCallback.DISCONNECTED
 // BleGattCallback.CONNECTING
@@ -298,42 +298,42 @@ int state = KnBle.getInstance().getDeviceConnState(device);
 
 #### Get last gatt status code of a device
 ```java
-int status = KnBle.getInstance().getLastGattStatusOfDevice(device);
+int status = KnBle.gi().getLastGattStatusOfDevice(device);
 ```
 
 #### Destroy all devices instances
 ```java
-KnBle.getInstance().destroyAllDevices();
+KnBle.gi().destroyAllDevices();
 ```
 
 ## Others operations
 
 #### Check if bluetooth adapter is enabled
 ```java
-boolean enabled = KnBle.getInstance().isBluetoothEnabled();
+boolean enabled = KnBle.gi().isBluetoothEnabled();
 ```
 
 #### Enable/Disable bluetooth adapter
 ```java
 // Enable
-KnBle.getInstance().enableBluetooth(true);
+KnBle.gi().enableBluetooth(true);
 // Disable
-KnBle.getInstance().enableBluetooth(false);
+KnBle.gi().enableBluetooth(false);
 ```
 
 #### Get the bluetooth adapter
 ```java
-BluetoothAdapter adapter = KnBle.getInstance().getBluetoothAdapter();
+BluetoothAdapter adapter = KnBle.gi().getBluetoothAdapter();
 ```
 
 #### Get the bluetooth manager service
 ```java
-BluetoothManager btManager = KnBle.getInstance().getBluetoothManager();
+BluetoothManager btManager = KnBle.gi().getBluetoothManager();
 ```
 
 #### Get KnBle context
 ```java
-Context ctx = KnBle.getInstance().getContext();
+Context ctx = KnBle.gi().getContext();
 ```
 
 #### Toggle DEBUG
