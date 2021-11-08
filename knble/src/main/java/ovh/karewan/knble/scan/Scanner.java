@@ -49,6 +49,8 @@ import ovh.karewan.knble.utils.Utils;
 
 @SuppressWarnings("MissingPermission")
 public class Scanner {
+	private static volatile Scanner sInstance;
+	
 	private final Handler mHandler = new Handler();
 	private final HashMap<String, BleDevice> mScannedDevices = new HashMap<>();
 
@@ -66,14 +68,20 @@ public class Scanner {
 	private BluetoothLeScanner mBluetoothLeScanner; // Android 6+
 
 	private Scanner() {}
-
-	private static class Loader {
-		static final Scanner INSTANCE = new Scanner();
-	}
-
+	
+	/**
+	 * Get instance
+	 * @return Scanner
+	 */
 	@NonNull
-	public static Scanner getInstance() {
-		return Loader.INSTANCE;
+	public static Scanner gi() {
+		if(sInstance == null) {
+			synchronized(Scanner.class) {
+				if(sInstance == null) sInstance = new Scanner();
+			}
+		}
+
+		return sInstance;
 	}
 
 	/**
@@ -213,9 +221,9 @@ public class Scanner {
 		}
 
 		// Check if bluetooth is enabled
-		if(!KnBle.getInstance().isBluetoothEnabled()) {
+		if(!KnBle.gi().isBluetoothEnabled()) {
 			// Enable bluetooth
-			KnBle.getInstance().enableBluetooth(true);
+			KnBle.gi().enableBluetooth(true);
 			// Add delay to be sure the adapter has time to init before start scan
 			delayBeforeStart += 5000;
 		}
@@ -230,14 +238,14 @@ public class Scanner {
 		setLastError(BleScanCallback.NO_ERROR);
 
 		// Check if bluetooth adapter is init
-		if(KnBle.getInstance().getBluetoothAdapter() == null) {
+		if(KnBle.gi().getBluetoothAdapter() == null) {
 			setLastError(BleScanCallback.BT_DISABLED);
 			callback.onScanFailed(mLastError);
 			return;
 		}
 
 		// Check if location services are enabled on Android 6+
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Utils.areLocationServicesEnabled(KnBle.getInstance().getContext())) {
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Utils.areLocationServicesEnabled(KnBle.gi().getContext())) {
 			setLastError(BleScanCallback.LOCATION_DISABLED);
 			callback.onScanFailed(mLastError);
 			return;
@@ -278,7 +286,7 @@ public class Scanner {
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			// Init LE Scanner
 			if(mBluetoothLeScanner == null) {
-				if(KnBle.getInstance().getBluetoothAdapter() != null) setBluetoothLeScanner(KnBle.getInstance().getBluetoothAdapter().getBluetoothLeScanner());
+				if(KnBle.gi().getBluetoothAdapter() != null) setBluetoothLeScanner(KnBle.gi().getBluetoothAdapter().getBluetoothLeScanner());
 
 				if(mBluetoothLeScanner == null) {
 					setLastError(BleScanCallback.SCANNER_UNAVAILABLE);
@@ -359,7 +367,7 @@ public class Scanner {
 			if(mLeScanCallback == null) setLeScanCallback((device, rssi, scanRecord) -> processScanResult(device, rssi, scanRecord, true));
 
 			// Start scanning
-			if(KnBle.getInstance().getBluetoothAdapter() != null) KnBle.getInstance().getBluetoothAdapter().startLeScan(mLeScanCallback);
+			if(KnBle.gi().getBluetoothAdapter() != null) KnBle.gi().getBluetoothAdapter().startLeScan(mLeScanCallback);
 		}
 	}
 
@@ -438,7 +446,7 @@ public class Scanner {
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			if(mBluetoothLeScanner != null && mScanCallback != null) mBluetoothLeScanner.stopScan(mScanCallback);
 		} else {
-			if(KnBle.getInstance().getBluetoothAdapter() != null && mLeScanCallback != null) KnBle.getInstance().getBluetoothAdapter().stopLeScan(mLeScanCallback);
+			if(KnBle.gi().getBluetoothAdapter() != null && mLeScanCallback != null) KnBle.gi().getBluetoothAdapter().stopLeScan(mLeScanCallback);
 		}
 
 		// Scanned finished
