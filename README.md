@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.2.1'
+	implementation 'com.github.Karewan:KnBle:2.2.2'
 }
 ```
 
@@ -37,6 +37,8 @@ Do not forget to add internet permissions in manifest
 <!-- Android 6+ -->
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<!-- Background BLE scan Android 10+ -->
+<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 ```
 
 Then initialize
@@ -72,7 +74,7 @@ KnBle.gi().startScan(new BleScanCallback() {
 	public void onScanResult(@NonNull BleDevice bleDevice) {
 
 	}
-	
+
 	@Override
 	public void onDeviceUpdated(@NonNull BleDevice bleDevice) {
 
@@ -350,7 +352,7 @@ KnBle.DEBUG = false;
 ```
 The MIT License (MIT)
 
-Copyright (c) 2019-2020 Florent VIALATTE
+Copyright (c) 2019-2021 Florent VIALATTE
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -1,28 +1,3 @@
-/*
-	KnBle
-
-	Released under the MIT License (MIT)
-
-	Copyright (c) 2019-2020 Florent VIALATTE
-
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so, subject to the following conditions:
-
-	The above copyright notice and this permission notice shall be included in
-	all copies or substantial portions of the Software.
-
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-	THE SOFTWARE.
- */
 package ovh.karewan.knble.utils;
 
 import android.content.Context;
@@ -33,6 +8,9 @@ import androidx.annotation.Nullable;
 
 import java.util.LinkedList;
 import java.util.Queue;
+
+import ovh.karewan.knble.KnBle;
+import ovh.karewan.knble.struct.ScanRecord;
 
 @SuppressWarnings("MissingPermission")
 public class Utils {
@@ -56,26 +34,27 @@ public class Utils {
 		try {
 			gps_enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 		} catch (Exception e) {
-			e.printStackTrace();
+			if(KnBle.DEBUG) e.printStackTrace();
 		}
 
 		// Check the network provider
 		try {
 			network_enabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 		} catch (Exception e) {
-			e.printStackTrace();
+			if(KnBle.DEBUG) e.printStackTrace();
 		}
 
 		return gps_enabled || network_enabled;
 	}
 
 	/**
-	 * Get the manufacturer ID from the MANUFACTURER_SPECIFIC_DATA (Bluetooth 4.1 specification)
+	 * Get the manufacturer ID and data from the MANUFACTURER_SPECIFIC_DATA (Bluetooth 4.1 specification)
 	 * @param scanRecord The scan record
-	 * @return int
+	 * @return ScanRecord|null
 	 */
-	public static int getManufacturerIdFromScanRecord(@Nullable byte[] scanRecord) {
-		if(scanRecord == null) return -1;
+	@Nullable
+	public static ScanRecord getScanRecordFromBytes(@Nullable byte[] scanRecord) {
+		if(scanRecord == null) return null;
 
 		try {
 			int currentPos = 0;
@@ -86,16 +65,23 @@ public class Utils {
 
 				// MANUFACTURER_SPECIFIC_DATA
 				if((scanRecord[currentPos++] & 0xFF) == 0xFF) {
-					return ((scanRecord[currentPos + 1] & 0xFF) << 8) + (scanRecord[currentPos] & 0xFF);
+					// ID
+					int manufacturerId = ((scanRecord[currentPos + 1] & 0xFF) << 8) + (scanRecord[currentPos] & 0xFF);
+
+					// DATA
+					byte[] manufacturerData = new byte[length - 3];
+					System.arraycopy(scanRecord, currentPos + 2, manufacturerData, 0, length - 3);
+
+					return new ScanRecord(scanRecord, manufacturerId, manufacturerData);
 				}
 
 				currentPos += length - 1;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			if(KnBle.DEBUG) e.printStackTrace();
 		}
 
-		return -1;
+		return new ScanRecord(scanRecord, null, null);
 	}
 
 	/**

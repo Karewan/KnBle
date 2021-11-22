@@ -1,28 +1,3 @@
-/*
-	KnBle
-
-	Released under the MIT License (MIT)
-
-	Copyright (c) 2019-2020 Florent VIALATTE
-
-	Permission is hereby granted, free of charge, to any person obtaining a copy
-	of this software and associated documentation files (the "Software"), to deal
-	in the Software without restriction, including without limitation the rights
-	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	copies of the Software, and to permit persons to whom the Software is
-	furnished to do so, subject to the following conditions:
-
-	The above copyright notice and this permission notice shall be included in
-	all copies or substantial portions of the Software.
-
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-	THE SOFTWARE.
- */
 package ovh.karewan.knble.scan;
 
 import android.annotation.TargetApi;
@@ -45,12 +20,13 @@ import java.util.List;
 import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleScanCallback;
 import ovh.karewan.knble.struct.BleDevice;
+import ovh.karewan.knble.struct.ScanRecord;
 import ovh.karewan.knble.utils.Utils;
 
 @SuppressWarnings("MissingPermission")
 public class Scanner {
 	private static volatile Scanner sInstance;
-	
+
 	private final Handler mHandler = new Handler();
 	private final HashMap<String, BleDevice> mScannedDevices = new HashMap<>();
 
@@ -68,7 +44,7 @@ public class Scanner {
 	private BluetoothLeScanner mBluetoothLeScanner; // Android 6+
 
 	private Scanner() {}
-	
+
 	/**
 	 * Get instance
 	 * @return Scanner
@@ -278,6 +254,7 @@ public class Scanner {
 	/**
 	 * Start devices scan
 	 */
+	@SuppressWarnings({"ConstantConditions", "deprecation"})
 	private void startScan() {
 		// Clear previous scanned devices
 		clearScannedDevices();
@@ -301,9 +278,7 @@ public class Scanner {
 					@Override
 					public void onScanResult(int callbackType, ScanResult result) {
 						// Scan record in bytes
-						byte[] scanRecord;
-						if(result.getScanRecord() != null) scanRecord = result.getScanRecord().getBytes();
-						else scanRecord = null;
+						byte[] scanRecord = result.getScanRecord() != null ? result.getScanRecord().getBytes() : null;
 
 						// Process
 						processScanResult(result.getDevice(), result.getRssi(), scanRecord, false);
@@ -375,10 +350,13 @@ public class Scanner {
 	 * When a new device is scanned
 	 * @param device The device
 	 * @param rssi The RSSI
-	 * @param scanRecord The scan record
+	 * @param rawScanRecord The scan record
 	 * @param manualFilter Use manual filter or not
 	 */
-	private void processScanResult(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] scanRecord, boolean manualFilter) {
+	private void processScanResult(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] rawScanRecord, boolean manualFilter) {
+		// The scan record
+		ScanRecord scanRecord = Utils.getScanRecordFromBytes(rawScanRecord);
+
 		// Apply filter manually ?
 		if(manualFilter && mScanFilters != null) {
 			// Nb of filters
@@ -412,8 +390,7 @@ public class Scanner {
 
 			// Manufacturer IDs
 			if(!deviceMatch && nbManuFilter > 0) {
-				int manufacturerId = Utils.getManufacturerIdFromScanRecord(scanRecord);
-				if(manufacturerId > -1 && !mScanFilters.getManufacturerIds().contains(manufacturerId)) return;
+				if(scanRecord == null || scanRecord.getManufacturerId() == null || !mScanFilters.getManufacturerIds().contains(scanRecord.getManufacturerId())) return;
 			}
 		}
 
@@ -430,10 +407,10 @@ public class Scanner {
 		} else {
 			// Update device already in hashmap
 			BleDevice bleDevice = mScannedDevices.get(device.getAddress());
-			
+
 			//noinspection ConstantConditions
 			bleDevice.updateDevice(device, rssi, scanRecord, System.currentTimeMillis());
-			
+
 			// Notify the UI
 			if(mCallback != null) mCallback.onDeviceUpdated(bleDevice);
 		}
@@ -442,6 +419,7 @@ public class Scanner {
 	/**
 	 * Stop devices scan
 	 */
+	@SuppressWarnings({"ConstantConditions", "deprecation"})
 	public void stopScan() {
 		// Clear the scan handler
 		mHandler.removeCallbacksAndMessages(null);
