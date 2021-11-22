@@ -74,7 +74,7 @@ KnBle.gi().startScan(new BleScanCallback() {
 	}
 	
 	@Override
-	public void onUpdatedDevice(@NonNull BleDevice bleDevice) {
+	public void onDeviceUpdated(@NonNull BleDevice bleDevice) {
 
 	}
 
