@@ -281,7 +281,7 @@ public class Scanner {
 						byte[] scanRecord = result.getScanRecord() != null ? result.getScanRecord().getBytes() : null;
 
 						// Process
-						processScanResult(result.getDevice(), result.getRssi(), scanRecord, false);
+						processScanResult(result.getDevice(), result.getRssi(), scanRecord);
 					}
 
 					@Override
@@ -339,7 +339,7 @@ public class Scanner {
 			mBluetoothLeScanner.startScan(scanFilters, scanSettingBuilder.build(), mScanCallback);
 		} else {
 			// Init the callback
-			if(mLeScanCallback == null) setLeScanCallback((device, rssi, scanRecord) -> processScanResult(device, rssi, scanRecord, true));
+			if(mLeScanCallback == null) setLeScanCallback(this::processScanResult);
 
 			// Start scanning
 			if(KnBle.gi().getBluetoothAdapter() != null) KnBle.gi().getBluetoothAdapter().startLeScan(mLeScanCallback);
@@ -351,48 +351,13 @@ public class Scanner {
 	 * @param device The device
 	 * @param rssi The RSSI
 	 * @param rawScanRecord The scan record
-	 * @param manualFilter Use manual filter or not
 	 */
-	private void processScanResult(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] rawScanRecord, boolean manualFilter) {
+	private void processScanResult(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] rawScanRecord) {
 		// The scan record
 		ScanRecord scanRecord = Utils.getScanRecordFromBytes(rawScanRecord);
 
-		// Apply filter manually ?
-		if(manualFilter && mScanFilters != null) {
-			// Nb of filters
-			boolean deviceMatch = false;
-			int nbMacFilter = mScanFilters.getDevicesMacs().size();
-			int nbManuFilter = mScanFilters.getManufacturerIds().size();
-
-			// Devices names
-			if(mScanFilters.getDeviceNames().size() > 0) {
-				// Check if device name match
-				if(!mScanFilters.getDeviceNames().contains(device.getName())) {
-					// If no other filters
-					if(nbMacFilter == 0 && nbManuFilter == 0) return;
-				} else {
-					// Device match
-					deviceMatch = true;
-				}
-			}
-
-			// Devices mac address
-			if(!deviceMatch && nbMacFilter > 0) {
-				// Check if device mac match
-				if(!mScanFilters.getDevicesMacs().contains(device.getAddress())) {
-					// If no others filters
-					if(nbManuFilter == 0) return;
-				} else {
-					// Device match
-					deviceMatch = true;
-				}
-			}
-
-			// Manufacturer IDs
-			if(!deviceMatch && nbManuFilter > 0) {
-				if(scanRecord == null || scanRecord.getManufacturerId() == null || !mScanFilters.getManufacturerIds().contains(scanRecord.getManufacturerId())) return;
-			}
-		}
+		// Check if filters match
+		if(!isFiltersMatch(device, scanRecord)) return;
 
 		// Check if device already exist
 		if(!mScannedDevices.containsKey(device.getAddress())) {
@@ -414,6 +379,44 @@ public class Scanner {
 			// Notify the UI
 			if(mCallback != null) mCallback.onDeviceUpdated(bleDevice);
 		}
+	}
+
+	/**
+	 * Is filters match
+	 * @param device BluetoothDevice
+	 * @param scanRecord ScanRecord
+	 * @return boolean
+	 */
+	private boolean isFiltersMatch(@NonNull BluetoothDevice device, @Nullable ScanRecord scanRecord) {
+		// No filters
+		if(mScanFilters == null || mScanFilters.count() == 0) return true;
+		else {
+			if(device.getName() != null) {
+				// Starts with name
+				for(String startsWith : mScanFilters.getDeviceStartsWithNames()) {
+					if(device.getName().startsWith(startsWith)) return true;
+				}
+
+				// Ends with name
+				for(String endsWith : mScanFilters.getDeviceEndsWithNames()) {
+					if(device.getName().endsWith(endsWith)) return true;
+				}
+			}
+
+			// Android < 6
+			if(Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+				// Device name
+				if(device.getName() != null && mScanFilters.getDeviceNames().contains(device.getName())) return true;
+
+				// Mac address
+				if(mScanFilters.getDevicesMacs().contains(device.getAddress())) return true;
+
+				// Manufacturer Id
+				return scanRecord != null && scanRecord.getManufacturerId() != null && mScanFilters.getManufacturerIds().contains(scanRecord.getManufacturerId());
+			}
+		}
+
+		return false;
 	}
 
 	/**
