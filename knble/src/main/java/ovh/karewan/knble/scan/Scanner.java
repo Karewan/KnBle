@@ -301,7 +301,7 @@ public class Scanner {
 
 			// Scan filters
 			List<ScanFilter> scanFilters = new ArrayList<>();
-			if(mScanFilters != null) {
+			if(mScanFilters != null && mScanFilters.isUsingAndroid6Filters()) {
 				// Devices names
 				for(String deviceName : mScanFilters.getDeviceNames())
 					scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setDeviceName(deviceName).build());
@@ -313,10 +313,10 @@ public class Scanner {
 				// Manufacturer IDs
 				for(int manufacturerId : mScanFilters.getManufacturerIds())
 					scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setManufacturerData(manufacturerId, new byte[] {}).build());
-
-				// No filter => Add an empty filter
-				if(scanFilters.size() == 0) scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().build());
 			}
+
+			// No filter => Add an empty filter
+			if(scanFilters.size() == 0) scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().build());
 
 			// Scan settings
 			android.bluetooth.le.ScanSettings.Builder scanSettingBuilder = new android.bluetooth.le.ScanSettings.Builder();
@@ -404,7 +404,8 @@ public class Scanner {
 			}
 
 			// Android < 6
-			if(Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && mScanFilters.isUsingAndroid6Filters()) return true;
+			else {
 				// Device name
 				if(device.getName() != null && mScanFilters.getDeviceNames().contains(device.getName())) return true;
 
@@ -415,8 +416,6 @@ public class Scanner {
 				return scanRecord != null && scanRecord.getManufacturerId() != null && mScanFilters.getManufacturerIds().contains(scanRecord.getManufacturerId());
 			}
 		}
-
-		return false;
 	}
 
 	/**

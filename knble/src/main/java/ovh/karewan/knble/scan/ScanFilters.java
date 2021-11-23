@@ -12,16 +12,31 @@ public class ScanFilters {
 	private final List<String> mDevicesEndsWithNames;
 	private final List<String> mDevicesMacs;
 	private final List<Integer> mManufacturerIds;
+	private final boolean mUseAndroid6Filters;
 
 	/**
 	 * Class constructor
+	 * @param devicesNames List<String>
+	 * @param devicesStartsWithNames List<String>
+	 * @param devicesEndsWithNames List<String>
+	 * @param devicesMacs List<String>
+	 * @param manufacturerIds List<Integer>
+	 * @param useAndroid6Filters boolean
 	 */
-	private ScanFilters(@NonNull List<String> devicesNames, @NonNull List<String> devicesStartsWithNames, @NonNull List<String> devicesEndsWithNames, @NonNull List<String> devicesMacs, @NonNull List<Integer> manufacturerIds) {
+	private ScanFilters(
+			@NonNull List<String> devicesNames,
+			@NonNull List<String> devicesStartsWithNames,
+			@NonNull List<String> devicesEndsWithNames,
+			@NonNull List<String> devicesMacs,
+			@NonNull List<Integer> manufacturerIds,
+			boolean useAndroid6Filters) {
+
 		this.mDevicesNames = devicesNames;
 		this.mDevicesStartsWithNames = devicesStartsWithNames;
 		this.mDevicesEndsWithNames = devicesEndsWithNames;
 		this.mDevicesMacs = devicesMacs;
 		this.mManufacturerIds = manufacturerIds;
+		this.mUseAndroid6Filters = useAndroid6Filters;
 	}
 
 	/**
@@ -70,6 +85,14 @@ public class ScanFilters {
 	}
 
 	/**
+	 * Is using android 6 filters
+	 * @return boolean
+	 */
+	public boolean isUsingAndroid6Filters() {
+		return mUseAndroid6Filters;
+	}
+
+	/**
 	 * Return nb filters
 	 * @return int
 	 */
@@ -86,6 +109,7 @@ public class ScanFilters {
 		private final List<String> mDevicesEndsWithNames = new ArrayList<>();
 		private final List<String> mDevicesMacs = new ArrayList<>();
 		private final List<Integer> mManufacturerIds = new ArrayList<>();
+		private boolean mUseAndroid6Filters = true;
 
 		public Builder addDeviceName(@NonNull String deviceName) {
 			this.mDevicesNames.add(deviceName);
@@ -113,8 +137,13 @@ public class ScanFilters {
 			return this;
 		}
 
+		public Builder setUseAndroid6Filters(boolean use) {
+			this.mUseAndroid6Filters = use;
+			return this;
+		}
+
 		public ScanFilters build() {
-			return new ScanFilters(mDevicesNames, mDevicesStartsWithNames, mDevicesEndsWithNames, mDevicesMacs, mManufacturerIds);
+			return new ScanFilters(mDevicesNames, mDevicesStartsWithNames, mDevicesEndsWithNames, mDevicesMacs, mManufacturerIds, mUseAndroid6Filters);
 		}
 	}
 }
