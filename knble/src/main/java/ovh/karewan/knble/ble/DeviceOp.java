@@ -675,14 +675,6 @@ public class DeviceOp {
 				setBluetoothGatt(null);
 			}
 
-			// Unbond the device
-			try {
-				Method methodUnBond = mDevice.getDevice().getClass().getMethod("removeBond", (Class[]) null);
-				methodUnBond.invoke(mDevice.getDevice(), (Object[]) null);
-			} catch (Exception e) {
-				if(KnBle.DEBUG) e.printStackTrace();
-			}
-
 			// Callback
 			if(mCallback != null) {
 				mCallback.onDisconnected();
