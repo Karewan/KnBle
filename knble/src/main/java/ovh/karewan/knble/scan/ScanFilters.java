@@ -11,6 +11,7 @@ public class ScanFilters {
 	private final List<String> mDevicesStartsWithNames;
 	private final List<String> mDevicesEndsWithNames;
 	private final List<String> mDevicesMacs;
+	private final List<String> mDevicesMacsStartsWith;
 	private final List<Integer> mManufacturerIds;
 	private final boolean mUseAndroid6Filters;
 
@@ -20,6 +21,7 @@ public class ScanFilters {
 	 * @param devicesStartsWithNames List<String>
 	 * @param devicesEndsWithNames List<String>
 	 * @param devicesMacs List<String>
+	 * @param devicesMacsStartsWith List<String>
 	 * @param manufacturerIds List<Integer>
 	 * @param useAndroid6Filters boolean
 	 */
@@ -28,6 +30,7 @@ public class ScanFilters {
 			@NonNull List<String> devicesStartsWithNames,
 			@NonNull List<String> devicesEndsWithNames,
 			@NonNull List<String> devicesMacs,
+			@NonNull List<String> devicesMacsStartsWith,
 			@NonNull List<Integer> manufacturerIds,
 			boolean useAndroid6Filters) {
 
@@ -35,6 +38,7 @@ public class ScanFilters {
 		this.mDevicesStartsWithNames = devicesStartsWithNames;
 		this.mDevicesEndsWithNames = devicesEndsWithNames;
 		this.mDevicesMacs = devicesMacs;
+		this.mDevicesMacsStartsWith = devicesMacsStartsWith;
 		this.mManufacturerIds = manufacturerIds;
 		this.mUseAndroid6Filters = useAndroid6Filters;
 	}
@@ -76,6 +80,15 @@ public class ScanFilters {
 	}
 
 	/**
+	 * Return mac address starts with list
+	 * @return mDevicesMacsStartsWith
+	 */
+	@NonNull
+	public List<String> getDevicesMacsStartsWith() {
+		return mDevicesMacsStartsWith;
+	}
+
+	/**
 	 * Return manufacturer IDs list
 	 * @return mManufacturerIds
 	 */
@@ -97,7 +110,7 @@ public class ScanFilters {
 	 * @return int
 	 */
 	public int count() {
-		return mDevicesNames.size() + mDevicesStartsWithNames.size() + mDevicesEndsWithNames.size() + mDevicesMacs.size() + mManufacturerIds.size();
+		return mDevicesNames.size() + mDevicesStartsWithNames.size() + mDevicesEndsWithNames.size() + mDevicesMacs.size() + mDevicesMacsStartsWith.size() + mManufacturerIds.size();
 	}
 
 	/**
@@ -108,6 +121,7 @@ public class ScanFilters {
 		private final List<String> mDevicesStartsWithNames = new ArrayList<>();
 		private final List<String> mDevicesEndsWithNames = new ArrayList<>();
 		private final List<String> mDevicesMacs = new ArrayList<>();
+		private final List<String> mDevicesMacsStartsWith = new ArrayList<>();
 		private final List<Integer> mManufacturerIds = new ArrayList<>();
 		private boolean mUseAndroid6Filters = true;
 
@@ -132,6 +146,11 @@ public class ScanFilters {
 			return this;
 		}
 
+		public Builder addMacAddressStartsWith(@NonNull String macAddressStartsWith) {
+			this.mDevicesMacsStartsWith.add(macAddressStartsWith);
+			return this;
+		}
+
 		public Builder addManufacturerId(int manufacturerId) {
 			this.mManufacturerIds.add(manufacturerId);
 			return this;
@@ -143,7 +162,7 @@ public class ScanFilters {
 		}
 
 		public ScanFilters build() {
-			return new ScanFilters(mDevicesNames, mDevicesStartsWithNames, mDevicesEndsWithNames, mDevicesMacs, mManufacturerIds, mUseAndroid6Filters);
+			return new ScanFilters(mDevicesNames, mDevicesStartsWithNames, mDevicesEndsWithNames, mDevicesMacs, mDevicesMacsStartsWith, mManufacturerIds, mUseAndroid6Filters);
 		}
 	}
 }

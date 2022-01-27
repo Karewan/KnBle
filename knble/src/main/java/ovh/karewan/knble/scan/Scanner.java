@@ -391,6 +391,7 @@ public class Scanner {
 		// No filters
 		if(mScanFilters == null || mScanFilters.count() == 0) return true;
 		else {
+			// Device name
 			if(device.getName() != null) {
 				// Starts with name
 				for(String startsWith : mScanFilters.getDeviceStartsWithNames()) {
@@ -401,6 +402,11 @@ public class Scanner {
 				for(String endsWith : mScanFilters.getDeviceEndsWithNames()) {
 					if(device.getName().endsWith(endsWith)) return true;
 				}
+			}
+
+			// Mac address
+			for(String startsWith : mScanFilters.getDevicesMacsStartsWith()) {
+				if(device.getAddress().startsWith(startsWith)) return true;
 			}
 
 			// Android < 6

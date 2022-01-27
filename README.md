@@ -26,19 +26,24 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.2.5'
+	implementation 'com.github.Karewan:KnBle:2.2.6'
 }
 ```
 
 Do not forget to add internet permissions in manifest
 ```xml
+<!-- For all Android versions -->
 <uses-permission android:name="android.permission.BLUETOOTH"/>
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-<!-- Android 6+ -->
+<!-- Android 6+: Needed for BLE scan -->
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-<!-- Background BLE scan Android 10+ -->
+<!-- Android 10+: For background BLE scan -->
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+<!-- Android 12+: BLE scan -->
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<!-- Android 12+: BLE connect to already paired device -->
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```
 
 Then initialize
@@ -352,7 +357,7 @@ KnBle.DEBUG = false;
 ```
 The MIT License (MIT)
 
-Copyright (c) 2019-2021 Florent VIALATTE
+Copyright (c) 2019-2022 Florent VIALATTE
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
