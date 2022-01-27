@@ -410,7 +410,7 @@ public class Scanner {
 			}
 
 			// Android < 6
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && mScanFilters.isUsingAndroid6Filters()) return true;
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && mScanFilters.isUsingAndroid6Filters()) return mScanFilters.count6Filters() > 0;
 			else {
 				// Device name
 				if(device.getName() != null && mScanFilters.getDeviceNames().contains(device.getName())) return true;

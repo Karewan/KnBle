@@ -114,6 +114,14 @@ public class ScanFilters {
 	}
 
 	/**
+	 * Return nb of android 6 filters
+	 * @return int
+	 */
+	public int count6Filters() {
+		return mDevicesNames.size() + mDevicesMacs.size() + mManufacturerIds.size();
+	}
+
+	/**
 	 * Builder
 	 */
 	public static final class Builder {
