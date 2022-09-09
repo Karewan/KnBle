@@ -7,8 +7,6 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -53,7 +51,6 @@ public class DeviceOp {
 
 	private BleReadCallback mReadCallback;
 	private BluetoothGattCharacteristic mReadCharacteristic;
-
 
 	/**
 	 * Class constructor
@@ -395,19 +392,7 @@ public class DeviceOp {
 				setBluetoothGatt(null);
 
 				// Always connect with autoConnect==false for better connection speed
-				// Android 6+ (Connect with TRANSPORT_LE)
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-					setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.gi().getContext(), false, mBluetoothGattCallback, BluetoothDevice.TRANSPORT_LE));
-				} else {
-					// Android 5.0+ (Connect with reflection method for getting TRANSPORT_LE before Android 6.0)
-					try {
-						Method connectGattMethod = mDevice.getDevice().getClass().getDeclaredMethod("connectGatt", Context.class, boolean.class, BluetoothGattCallback.class, int.class);
-						connectGattMethod.setAccessible(true);
-						setBluetoothGatt((BluetoothGatt) connectGattMethod.invoke(mDevice.getDevice(), KnBle.gi().getContext(), false, mBluetoothGattCallback, 2));
-					} catch (Exception e) {
-						if(KnBle.DEBUG) e.printStackTrace();
-					}
-				}
+				setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.gi().getContext(), false, mBluetoothGattCallback, BluetoothDevice.TRANSPORT_LE));
 
 				// If other methods have failed
 				if(mBluetoothGatt == null) setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.gi().getContext(), false, mBluetoothGattCallback));
@@ -653,8 +638,6 @@ public class DeviceOp {
 	/**
 	 * Disconnect the device
 	 */
-
-	@SuppressWarnings({"JavaReflectionMemberAccess", "rawtypes"})
 	public void disconnect() {
 		if(KnBle.DEBUG) Log.d(LOG, "disconnect");
 

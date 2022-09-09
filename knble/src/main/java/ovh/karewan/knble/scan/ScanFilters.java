@@ -1,37 +1,39 @@
 package ovh.karewan.knble.scan;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class ScanFilters {
-	private final List<String> mDevicesNames;
-	private final List<String> mDevicesStartsWithNames;
-	private final List<String> mDevicesEndsWithNames;
-	private final List<String> mDevicesMacs;
-	private final List<String> mDevicesMacsStartsWith;
-	private final List<Integer> mManufacturerIds;
+	private final ArrayList<String> mDevicesNames;
+	private final ArrayList<String> mDevicesStartsWithNames;
+	private final ArrayList<String> mDevicesEndsWithNames;
+	private final ArrayList<String> mDevicesMacs;
+	private final ArrayList<String> mDevicesMacsStartsWith;
+	private final ArrayList<Integer> mManufacturerIds;
+	private final ArrayList<UUID> mBeaconUUIDs;
 	private final boolean mUseAndroid6Filters;
 
 	/**
 	 * Class constructor
-	 * @param devicesNames List<String>
-	 * @param devicesStartsWithNames List<String>
-	 * @param devicesEndsWithNames List<String>
-	 * @param devicesMacs List<String>
-	 * @param devicesMacsStartsWith List<String>
-	 * @param manufacturerIds List<Integer>
+	 * @param devicesNames ArrayList<String>
+	 * @param devicesStartsWithNames ArrayList<String>
+	 * @param devicesEndsWithNames ArrayList<String>
+	 * @param devicesMacs ArrayList<String>
+	 * @param devicesMacsStartsWith ArrayList<String>
+	 * @param manufacturerIds ArrayList<Integer>
 	 * @param useAndroid6Filters boolean
 	 */
 	private ScanFilters(
-			@NonNull List<String> devicesNames,
-			@NonNull List<String> devicesStartsWithNames,
-			@NonNull List<String> devicesEndsWithNames,
-			@NonNull List<String> devicesMacs,
-			@NonNull List<String> devicesMacsStartsWith,
-			@NonNull List<Integer> manufacturerIds,
+			@NonNull ArrayList<String> devicesNames,
+			@NonNull ArrayList<String> devicesStartsWithNames,
+			@NonNull ArrayList<String> devicesEndsWithNames,
+			@NonNull ArrayList<String> devicesMacs,
+			@NonNull ArrayList<String> devicesMacsStartsWith,
+			@NonNull ArrayList<Integer> manufacturerIds,
+			@NonNull ArrayList<UUID> beaconUUIDs,
 			boolean useAndroid6Filters) {
 
 		this.mDevicesNames = devicesNames;
@@ -40,6 +42,7 @@ public class ScanFilters {
 		this.mDevicesMacs = devicesMacs;
 		this.mDevicesMacsStartsWith = devicesMacsStartsWith;
 		this.mManufacturerIds = manufacturerIds;
+		this.mBeaconUUIDs = beaconUUIDs;
 		this.mUseAndroid6Filters = useAndroid6Filters;
 	}
 
@@ -98,6 +101,15 @@ public class ScanFilters {
 	}
 
 	/**
+	 * Return beacon UUIDs list
+	 * @return mBeaconUUIDs
+	 */
+	@NonNull
+	public List<UUID> getBeaconUUIDs() {
+		return mBeaconUUIDs;
+	}
+
+	/**
 	 * Is using android 6 filters
 	 * @return boolean
 	 */
@@ -110,7 +122,13 @@ public class ScanFilters {
 	 * @return int
 	 */
 	public int count() {
-		return mDevicesNames.size() + mDevicesStartsWithNames.size() + mDevicesEndsWithNames.size() + mDevicesMacs.size() + mDevicesMacsStartsWith.size() + mManufacturerIds.size();
+		return mDevicesNames.size()
+				+ mDevicesStartsWithNames.size()
+				+ mDevicesEndsWithNames.size()
+				+ mDevicesMacs.size()
+				+ mDevicesMacsStartsWith.size()
+				+ mManufacturerIds.size()
+				+ mBeaconUUIDs.size();
 	}
 
 	/**
@@ -118,19 +136,23 @@ public class ScanFilters {
 	 * @return int
 	 */
 	public int count6Filters() {
-		return mDevicesNames.size() + mDevicesMacs.size() + mManufacturerIds.size();
+		return mDevicesNames.size()
+				+ mDevicesMacs.size()
+				+ mManufacturerIds.size()
+				+ mBeaconUUIDs.size();
 	}
 
 	/**
 	 * Builder
 	 */
 	public static final class Builder {
-		private final List<String> mDevicesNames = new ArrayList<>();
-		private final List<String> mDevicesStartsWithNames = new ArrayList<>();
-		private final List<String> mDevicesEndsWithNames = new ArrayList<>();
-		private final List<String> mDevicesMacs = new ArrayList<>();
-		private final List<String> mDevicesMacsStartsWith = new ArrayList<>();
-		private final List<Integer> mManufacturerIds = new ArrayList<>();
+		private final ArrayList<String> mDevicesNames = new ArrayList<>();
+		private final ArrayList<String> mDevicesStartsWithNames = new ArrayList<>();
+		private final ArrayList<String> mDevicesEndsWithNames = new ArrayList<>();
+		private final ArrayList<String> mDevicesMacs = new ArrayList<>();
+		private final ArrayList<String> mDevicesMacsStartsWith = new ArrayList<>();
+		private final ArrayList<Integer> mManufacturerIds = new ArrayList<>();
+		private final ArrayList<UUID> mBeaconUUIDs = new ArrayList<>();
 		private boolean mUseAndroid6Filters = true;
 
 		public Builder addDeviceName(@NonNull String deviceName) {
@@ -164,13 +186,18 @@ public class ScanFilters {
 			return this;
 		}
 
+		public Builder addBeaconUUID(UUID uuid) {
+			this.mBeaconUUIDs.add(uuid);
+			return this;
+		}
+
 		public Builder setUseAndroid6Filters(boolean use) {
 			this.mUseAndroid6Filters = use;
 			return this;
 		}
 
 		public ScanFilters build() {
-			return new ScanFilters(mDevicesNames, mDevicesStartsWithNames, mDevicesEndsWithNames, mDevicesMacs, mDevicesMacsStartsWith, mManufacturerIds, mUseAndroid6Filters);
+			return new ScanFilters(mDevicesNames, mDevicesStartsWithNames, mDevicesEndsWithNames, mDevicesMacs, mDevicesMacsStartsWith, mManufacturerIds, mBeaconUUIDs, mUseAndroid6Filters);
 		}
 	}
 }

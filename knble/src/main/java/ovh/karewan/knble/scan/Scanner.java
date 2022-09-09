@@ -1,7 +1,5 @@
 package ovh.karewan.knble.scan;
 
-import android.annotation.TargetApi;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -16,6 +14,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleScanCallback;
@@ -37,8 +36,6 @@ public class Scanner {
 	private ScanFilters mScanFilters = new ScanFilters.Builder().build();
 
 	private BleScanCallback mCallback;
-
-	private BluetoothAdapter.LeScanCallback mLeScanCallback; // Android 4.4+
 
 	private ScanCallback mScanCallback; // Android 6+
 	private BluetoothLeScanner mBluetoothLeScanner; // Android 6+
@@ -106,24 +103,14 @@ public class Scanner {
 	 * Set scan callback (Android 6+)
 	 * @param callback ScanCallback
 	 */
-	@TargetApi(Build.VERSION_CODES.M)
 	private synchronized void setScanCallback(@Nullable ScanCallback callback) {
 		mScanCallback = callback;
-	}
-
-	/**
-	 * Set LeScanCallback (Android 4.4-5.1)
-	 * @param callback LeScanCallback
-	 */
-	private synchronized void setLeScanCallback(@Nullable BluetoothAdapter.LeScanCallback callback) {
-		mLeScanCallback = callback;
 	}
 
 	/**
 	 * Set BluetoothLeScanner (Android 6+)
 	 * @param scanner BluetoothLeScanner
 	 */
-	@TargetApi(Build.VERSION_CODES.M)
 	private synchronized void setBluetoothLeScanner(@Nullable BluetoothLeScanner scanner) {
 		mBluetoothLeScanner = scanner;
 	}
@@ -221,7 +208,7 @@ public class Scanner {
 		}
 
 		// Check if location services are enabled on Android 6+
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Utils.areLocationServicesEnabled(KnBle.gi().getContext())) {
+		if(!Utils.areLocationServicesEnabled(KnBle.gi().getContext())) {
 			setLastError(BleScanCallback.LOCATION_DISABLED);
 			callback.onScanFailed(mLastError);
 			return;
@@ -254,96 +241,99 @@ public class Scanner {
 	/**
 	 * Start devices scan
 	 */
-	@SuppressWarnings({"ConstantConditions", "deprecation"})
 	private void startScan() {
 		// Clear previous scanned devices
 		clearScannedDevices();
 
-		// Android 6+
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			// Init LE Scanner
+		// Init LE Scanner
+		if(mBluetoothLeScanner == null) {
+			if(KnBle.gi().getBluetoothAdapter() != null) {
+				//noinspection ConstantConditions
+				setBluetoothLeScanner(KnBle.gi().getBluetoothAdapter().getBluetoothLeScanner());
+			}
+
 			if(mBluetoothLeScanner == null) {
-				if(KnBle.gi().getBluetoothAdapter() != null) setBluetoothLeScanner(KnBle.gi().getBluetoothAdapter().getBluetoothLeScanner());
-
-				if(mBluetoothLeScanner == null) {
-					setLastError(BleScanCallback.SCANNER_UNAVAILABLE);
-					if(mCallback != null) mCallback.onScanFailed(mLastError);
-					return;
-				}
+				setLastError(BleScanCallback.SCANNER_UNAVAILABLE);
+				if(mCallback != null) mCallback.onScanFailed(mLastError);
+				return;
 			}
-
-			if(mScanCallback == null) {
-				// Init the callback
-				setScanCallback(new android.bluetooth.le.ScanCallback() {
-					@Override
-					public void onScanResult(int callbackType, ScanResult result) {
-						// Scan record in bytes
-						byte[] scanRecord = result.getScanRecord() != null ? result.getScanRecord().getBytes() : null;
-
-						// Process
-						processScanResult(result.getDevice(), result.getRssi(), scanRecord);
-					}
-
-					@Override
-					public void onScanFailed(int errorCode) {
-						// Set last error
-						if(errorCode == android.bluetooth.le.ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED) setLastError(BleScanCallback.SCAN_FEATURE_UNSUPPORTED);
-						else setLastError(BleScanCallback.UNKNOWN_ERROR);
-
-						// Callback
-						if(mCallback != null) mCallback.onScanFailed(mLastError);
-
-						// Stop the scan
-						stopScan();
-					}
-				});
-			}
-
-			// Scan filters
-			List<ScanFilter> scanFilters = new ArrayList<>();
-			if(mScanFilters != null && mScanFilters.isUsingAndroid6Filters()) {
-				// Devices names
-				for(String deviceName : mScanFilters.getDeviceNames())
-					scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setDeviceName(deviceName).build());
-
-				// Devices mac address
-				for(String macAdress : mScanFilters.getDevicesMacs())
-					scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setDeviceAddress(macAdress).build());
-
-				// Manufacturer IDs
-				for(int manufacturerId : mScanFilters.getManufacturerIds())
-					scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setManufacturerData(manufacturerId, new byte[] {}).build());
-			}
-
-			// No filter => Add an empty filter
-			if(scanFilters.size() == 0) scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().build());
-
-			// Scan settings
-			android.bluetooth.le.ScanSettings.Builder scanSettingBuilder = new android.bluetooth.le.ScanSettings.Builder();
-			if(mScanSettings != null) {
-				// Set the settings
-				scanSettingBuilder.setScanMode(mScanSettings.getScanMode())
-						.setMatchMode(mScanSettings.getMatchMode())
-						.setNumOfMatches(mScanSettings.getNbMatch())
-						.setCallbackType(mScanSettings.getCallbackType())
-						.setReportDelay(mScanSettings.getReportDelay());
-
-				// Scan settings for android 8+
-				if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-					scanSettingBuilder.setLegacy(mScanSettings.isLegacy());
-					scanSettingBuilder.setPhy(mScanSettings.getPhy());
-				}
-			}
-
-			// Start scanning
-			mBluetoothLeScanner.startScan(scanFilters, scanSettingBuilder.build(), mScanCallback);
-		} else {
-			// Init the callback
-			if(mLeScanCallback == null) setLeScanCallback(this::processScanResult);
-
-			// Start scanning
-			if(KnBle.gi().getBluetoothAdapter() != null) KnBle.gi().getBluetoothAdapter().startLeScan(mLeScanCallback);
 		}
+
+		if(mScanCallback == null) {
+			// Init the callback
+			setScanCallback(new android.bluetooth.le.ScanCallback() {
+				@Override
+				public void onScanResult(int callbackType, ScanResult result) {
+					// Scan record in bytes
+					byte[] scanRecord = result.getScanRecord() != null ? result.getScanRecord().getBytes() : null;
+
+					// Process
+					processScanResult(result.getDevice(), result.getRssi(), scanRecord);
+				}
+
+				@Override
+				public void onScanFailed(int errorCode) {
+					// Set last error
+					if(errorCode == android.bluetooth.le.ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED) setLastError(BleScanCallback.SCAN_FEATURE_UNSUPPORTED);
+					else setLastError(BleScanCallback.UNKNOWN_ERROR);
+
+					// Callback
+					if(mCallback != null) mCallback.onScanFailed(mLastError);
+
+					// Stop the scan
+					stopScan();
+				}
+			});
+		}
+
+		// Scan filters
+		List<ScanFilter> scanFilters = new ArrayList<>();
+		if(mScanFilters != null && mScanFilters.isUsingAndroid6Filters()) {
+			// Devices names
+			for(String deviceName : mScanFilters.getDeviceNames())
+				scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setDeviceName(deviceName).build());
+
+			// Devices mac address
+			for(String macAdress : mScanFilters.getDevicesMacs())
+				scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setDeviceAddress(macAdress).build());
+
+			// Manufacturer IDs
+			for(int manufacturerId : mScanFilters.getManufacturerIds())
+				scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setManufacturerData(manufacturerId, new byte[] {}).build());
+
+			// Beacon UUIDs
+			for(UUID uuid : mScanFilters.getBeaconUUIDs()) {
+				byte[] one = new byte[]{ 0x02, 0x15 };
+				byte[] two = Utils.uuidAsBytes(uuid);
+				byte[] manufacturerData = new byte[one.length + two.length];
+				System.arraycopy(one,0, manufacturerData,0, one.length);
+				System.arraycopy(two,0, manufacturerData, one.length, two.length);
+				scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().setManufacturerData(0x004c, manufacturerData).build());
+			}
+		}
+
+		// No filter => Add an empty filter
+		if(scanFilters.size() == 0) scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().build());
+
+		// Scan settings
+		android.bluetooth.le.ScanSettings.Builder scanSettingBuilder = new android.bluetooth.le.ScanSettings.Builder();
+		if(mScanSettings != null) {
+			// Set the settings
+			scanSettingBuilder.setScanMode(mScanSettings.getScanMode())
+					.setMatchMode(mScanSettings.getMatchMode())
+					.setNumOfMatches(mScanSettings.getNbMatch())
+					.setCallbackType(mScanSettings.getCallbackType())
+					.setReportDelay(mScanSettings.getReportDelay());
+
+			// Scan settings for android 8+
+			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				scanSettingBuilder.setLegacy(mScanSettings.isLegacy());
+				scanSettingBuilder.setPhy(mScanSettings.getPhy());
+			}
+		}
+
+		// Start scanning
+		mBluetoothLeScanner.startScan(scanFilters, scanSettingBuilder.build(), mScanCallback);
 	}
 
 	/**
@@ -354,7 +344,7 @@ public class Scanner {
 	 */
 	private void processScanResult(@NonNull BluetoothDevice device, int rssi, @Nullable byte[] rawScanRecord) {
 		// The scan record
-		ScanRecord scanRecord = Utils.getScanRecordFromBytes(rawScanRecord);
+		ScanRecord scanRecord = rawScanRecord == null ? null : new ScanRecord(rawScanRecord);
 
 		// Check if filters match
 		if(!isFiltersMatch(device, scanRecord)) return;
@@ -393,30 +383,33 @@ public class Scanner {
 		else {
 			// Device name
 			if(device.getName() != null) {
-				// Starts with name
+				// Device name starts with name
 				for(String startsWith : mScanFilters.getDeviceStartsWithNames()) {
 					if(device.getName().startsWith(startsWith)) return true;
 				}
 
-				// Ends with name
+				// Device name ends with name
 				for(String endsWith : mScanFilters.getDeviceEndsWithNames()) {
 					if(device.getName().endsWith(endsWith)) return true;
 				}
 			}
 
-			// Mac address
+			// Mac address starts with
 			for(String startsWith : mScanFilters.getDevicesMacsStartsWith()) {
 				if(device.getAddress().startsWith(startsWith)) return true;
 			}
 
-			// Android < 6
-			if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && mScanFilters.isUsingAndroid6Filters()) return mScanFilters.count6Filters() > 0;
+			// If using Android 6 filters
+			if(mScanFilters.isUsingAndroid6Filters()) return mScanFilters.count6Filters() > 0;
 			else {
 				// Device name
 				if(device.getName() != null && mScanFilters.getDeviceNames().contains(device.getName())) return true;
 
 				// Mac address
 				if(mScanFilters.getDevicesMacs().contains(device.getAddress())) return true;
+
+				// Beacon UUIDs
+				if(scanRecord != null && scanRecord.getBeaconUUID() != null && mScanFilters.getBeaconUUIDs().contains(scanRecord.getBeaconUUID())) return true;
 
 				// Manufacturer Id
 				return scanRecord != null && scanRecord.getManufacturerId() != null && mScanFilters.getManufacturerIds().contains(scanRecord.getManufacturerId());
@@ -427,17 +420,12 @@ public class Scanner {
 	/**
 	 * Stop devices scan
 	 */
-	@SuppressWarnings({"ConstantConditions", "deprecation"})
 	public void stopScan() {
 		// Clear the scan handler
 		mHandler.removeCallbacksAndMessages(null);
 
-		// Android 6+
-		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			if(mBluetoothLeScanner != null && mScanCallback != null) mBluetoothLeScanner.stopScan(mScanCallback);
-		} else {
-			if(KnBle.gi().getBluetoothAdapter() != null && mLeScanCallback != null) KnBle.gi().getBluetoothAdapter().stopLeScan(mLeScanCallback);
-		}
+		// Stop scan
+		if(mBluetoothLeScanner != null && mScanCallback != null) mBluetoothLeScanner.stopScan(mScanCallback);
 
 		// Scanned finished
 		setIsScanning(false);
@@ -457,7 +445,6 @@ public class Scanner {
 		if(resetSettings) setScanSettings(new ScanSettings.Builder().build());
 		if(resetFilters) setScanFilter(new ScanFilters.Builder().build());
 		setBluetoothLeScanner(null);
-		setLeScanCallback(null);
 		setScanCallback(null);
 		clearScannedDevices();
 		setLastError(BleScanCallback.NO_ERROR);

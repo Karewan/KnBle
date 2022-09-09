@@ -6,11 +6,12 @@ import android.location.LocationManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.UUID;
 
 import ovh.karewan.knble.KnBle;
-import ovh.karewan.knble.struct.ScanRecord;
 
 @SuppressWarnings("MissingPermission")
 public class Utils {
@@ -45,43 +46,6 @@ public class Utils {
 		}
 
 		return gps_enabled || network_enabled;
-	}
-
-	/**
-	 * Get the manufacturer ID and data from the MANUFACTURER_SPECIFIC_DATA (Bluetooth 4.1 specification)
-	 * @param scanRecord The scan record
-	 * @return ScanRecord|null
-	 */
-	@Nullable
-	public static ScanRecord getScanRecordFromBytes(@Nullable byte[] scanRecord) {
-		if(scanRecord == null) return null;
-
-		try {
-			int currentPos = 0;
-
-			while (currentPos < scanRecord.length) {
-				int length = scanRecord[currentPos++] & 0xFF;
-				if (length == 0) break;
-
-				// MANUFACTURER_SPECIFIC_DATA
-				if((scanRecord[currentPos++] & 0xFF) == 0xFF) {
-					// ID
-					int manufacturerId = ((scanRecord[currentPos + 1] & 0xFF) << 8) + (scanRecord[currentPos] & 0xFF);
-
-					// DATA
-					byte[] manufacturerData = new byte[length - 3];
-					System.arraycopy(scanRecord, currentPos + 2, manufacturerData, 0, length - 3);
-
-					return new ScanRecord(scanRecord, manufacturerId, manufacturerData);
-				}
-
-				currentPos += length - 1;
-			}
-		} catch (Exception e) {
-			if(KnBle.DEBUG) e.printStackTrace();
-		}
-
-		return new ScanRecord(scanRecord, null, null);
 	}
 
 	/**
@@ -122,5 +86,17 @@ public class Utils {
 		}
 
 		return queue;
+	}
+
+	/**
+	 * UUID as bytes
+	 * @param uuid UUID
+	 * @return byte[]
+	 */
+	public static byte[] uuidAsBytes(UUID uuid) {
+		ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+		bb.putLong(uuid.getMostSignificantBits());
+		bb.putLong(uuid.getLeastSignificantBits());
+		return bb.array();
 	}
 }
