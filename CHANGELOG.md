@@ -1,6 +1,15 @@
 KnBle Change Log
 ==========
 
+Version 2.3.1 *(2023-03-08)*
+----------------------------
+- Enable/disable adapter is deprecated since Android 13
+- Bump target SDK to 33
+- Bump gradle plugin to 7.4.2
+- Bump gradle to 7.5
+- Bump androidx.annotation:annotation to 1.6.0
+- Various bug fixes and improvements
+
 Version 2.3.0 *(2022-09-09)*
 ----------------------------
 - New scan filter: beaconUUID

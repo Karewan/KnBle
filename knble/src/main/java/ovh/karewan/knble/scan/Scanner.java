@@ -186,9 +186,15 @@ public class Scanner {
 		// Check if bluetooth is enabled
 		if(!KnBle.gi().isBluetoothEnabled()) {
 			// Enable bluetooth
-			KnBle.gi().enableBluetooth(true);
-			// Add delay to be sure the adapter has time to init before start scan
-			delayBeforeStart += 5000;
+			if(!KnBle.gi().enableBluetooth(true)) {
+				// Error
+				setLastError(BleScanCallback.BT_DISABLED);
+				callback.onScanFailed(mLastError);
+				return;
+			} else {
+				// Add delay to be sure the adapter has time to init before start scan
+				delayBeforeStart += 5000;
+			}
 		}
 
 		// Clear previous scanned devices

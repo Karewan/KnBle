@@ -4,7 +4,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 
+import androidx.annotation.DeprecatedSinceApi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -128,12 +130,12 @@ public class KnBle {
 	/**
 	 * Enable/Disable bluetooth
 	 * @param enable Enable or disable
+	 * @return boolean
 	 */
-	public void enableBluetooth(boolean enable) {
-		if(mBluetoothAdapter == null) return;
-
-		if(enable) mBluetoothAdapter.enable();
-		else mBluetoothAdapter.disable();
+	@DeprecatedSinceApi(api=Build.VERSION_CODES.TIRAMISU)
+	public boolean enableBluetooth(boolean enable) {
+		if(mBluetoothAdapter == null || Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return false;
+		return enable ? mBluetoothAdapter.enable() : mBluetoothAdapter.disable();
 	}
 
 	/**

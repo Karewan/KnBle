@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.3.0'
+	implementation 'com.github.Karewan:KnBle:2.3.1'
 }
 ```
 
@@ -38,7 +38,7 @@ Do not forget to add internet permissions in manifest
 <!-- Android 6+: Needed for BLE scan -->
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-<!-- Android 10+: For background BLE scan -->
+<!-- Android 10+: For background BLE scan (Optional) -->
 <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 <!-- Android 12+: BLE scan -->
 <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
@@ -325,7 +325,7 @@ KnBle.gi().destroyAllDevices();
 boolean enabled = KnBle.gi().isBluetoothEnabled();
 ```
 
-#### Enable/Disable bluetooth adapter
+#### Enable/Disable bluetooth adapter (Deprecated in Android 13+)
 ```java
 // Enable
 KnBle.gi().enableBluetooth(true);
@@ -357,7 +357,7 @@ KnBle.DEBUG = false;
 ```
 The MIT License (MIT)
 
-Copyright (c) 2019-2022 Florent VIALATTE
+Copyright (c) 2019-2023 Florent VIALATTE
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

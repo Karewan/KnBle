@@ -363,6 +363,7 @@ public class DeviceOp {
 					if(KnBle.DEBUG) Log.d(LOG, "already connecting");
 					callback.onConnecting();
 					return;
+
 				case BleGattCallback.CONNECTED:
 					if(KnBle.DEBUG) Log.d(LOG, "already connected");
 					if(mBluetoothGatt != null) {
@@ -379,8 +380,15 @@ public class DeviceOp {
 			// Enable bluetooth if not enabled
 			if(!KnBle.gi().isBluetoothEnabled()) {
 				if(KnBle.DEBUG) Log.d(LOG, "bluetooth is disabled");
-				KnBle.gi().enableBluetooth(true);
-				delayBeforeConnect += 5000;
+
+				if(!KnBle.gi().enableBluetooth(true)) {
+					// Connected failed
+					callback.onConnectFailed();
+					disconnect();
+				} else {
+					// Add delay to be sure the adapter has time to init before connect
+					delayBeforeConnect += 5000;
+				}
 			}
 
 			// Set state connecting
