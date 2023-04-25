@@ -284,6 +284,11 @@ KnBle.gi().requestMtu(device, mtu);
 int mtu = KnBle.gi().getMtu(device);
 ```
 
+#### Set prefered PHY
+```java
+KnBle.gi().setPreferredPhy(device, txPhy, rxPhy, phyOptions);
+```
+
 #### Change BleGattCallback of a device
 ```java
 KnBle.gi().setGattCallback(device, newCallback);
