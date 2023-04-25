@@ -1,6 +1,10 @@
 KnBle Change Log
 ==========
 
+Version 2.3.2 *(2023-04-25)*
+----------------------------
+- Add setPreferredPhy function (Android 8+)
+
 Version 2.3.1 *(2023-03-08)*
 ----------------------------
 - Enable/disable adapter is deprecated since Android 13

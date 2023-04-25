@@ -1,5 +1,8 @@
 package ovh.karewan.knble.ble;
 
+import android.annotation.TargetApi;
+import android.os.Build;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -157,6 +160,19 @@ public class DevicesManager {
 	public void requestMtu(@NonNull BleDevice device, int mtu) {
 		if(!containDevice(device)) return;
 		getDeviceOp(device).requestMtu(mtu);
+	}
+
+	/**
+	 * Set prefered PHY
+	 * @param device The device
+	 * @param txPhy TX PHY
+	 * @param rxPhy RX PHY
+	 * @param phyOptions CODING FOR LE CODED PHY
+	 */
+	@TargetApi(Build.VERSION_CODES.O)
+	public void setPreferredPhy(@NonNull BleDevice device, int txPhy, int rxPhy, int phyOptions) {
+		if(!containDevice(device)) return;
+		getDeviceOp(device).setPreferredPhy(txPhy, rxPhy, phyOptions);
 	}
 
 	/**

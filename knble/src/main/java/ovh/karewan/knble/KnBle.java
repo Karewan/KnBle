@@ -1,5 +1,6 @@
 package ovh.karewan.knble;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
@@ -309,6 +310,18 @@ public class KnBle {
 	 */
 	public void requestMtu(@NonNull BleDevice device, int mtu) {
 		DevicesManager.gi().requestMtu(device, mtu);
+	}
+
+	/**
+	 * Set prefered PHY
+	 * @param device The device
+	 * @param txPhy TX PHY
+	 * @param rxPhy RX PHY
+	 * @param phyOptions CODING FOR LE CODED PHY
+	 */
+	@TargetApi(Build.VERSION_CODES.O)
+	public void setPreferredPhy(@NonNull BleDevice device, int txPhy, int rxPhy, int phyOptions) {
+		DevicesManager.gi().setPreferredPhy(device, txPhy, rxPhy, phyOptions);
 	}
 
 	/**

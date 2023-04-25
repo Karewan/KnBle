@@ -1,5 +1,6 @@
 package ovh.karewan.knble.ble;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -7,6 +8,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -598,6 +600,22 @@ public class DeviceOp {
 
 		mMainHandler.post(() -> {
 			if(mBluetoothGatt != null)  mBluetoothGatt.requestMtu(mtu);
+		});
+	}
+
+	/**
+	 *Set prefered PHY
+	 * @param txPhy TX PHY
+	 * @param rxPhy RX PHY
+	 * @param phyOptions CODING FOR LE CODED PHY
+	 */
+	@TargetApi(Build.VERSION_CODES.O)
+	public void setPreferredPhy(int txPhy, int rxPhy, int phyOptions) {
+		if(KnBle.DEBUG) Log.d(LOG, "setPreferredPhy txPhy=" + txPhy + " rxPhy=" + rxPhy + " phyOptions=" + phyOptions);
+		if(!isConnected()) return;
+
+		mMainHandler.post(() -> {
+			if(mBluetoothGatt != null)  mBluetoothGatt.setPreferredPhy(txPhy, rxPhy, phyOptions);
 		});
 	}
 
