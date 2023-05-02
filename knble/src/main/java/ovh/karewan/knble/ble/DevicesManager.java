@@ -1,6 +1,7 @@
 package ovh.karewan.knble.ble;
 
 import android.annotation.TargetApi;
+import android.bluetooth.BluetoothGatt;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
+import ovh.karewan.knble.interfaces.BleNotifyCallback;
 import ovh.karewan.knble.interfaces.BleReadCallback;
 import ovh.karewan.knble.interfaces.BleWriteCallback;
 import ovh.karewan.knble.struct.BleDevice;
@@ -130,6 +132,17 @@ public class DevicesManager {
 			if(entry.getValue().isConnected()) connectedDevices.add(entry.getValue().getDevice());
 		}
 		return connectedDevices;
+	}
+
+	/**
+	 * Get the BluetoothGatt of a device
+	 * @param device The device
+	 * @return BluetoothGatt|null
+	 */
+	@Nullable
+	public BluetoothGatt getBluetoothGatt(@NonNull BleDevice device) {
+		if(!containDevice(device)) return null;
+		return getDeviceOp(device).getBluetoothGatt();
 	}
 
 	/**
@@ -272,6 +285,31 @@ public class DevicesManager {
 		}
 
 		getDeviceOp(device).read(serviceUUID, characteristicUUID, callback);
+	}
+
+	/**
+	 * Enable notify
+	 * @param device The device
+	 * @param serviceUUID The service UUID
+	 * @param characteristicUUID The characteristic UUID
+	 * @param descriptorUUID The descriptor UUID
+	 * @param callback The call back
+	 */
+	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull String descriptorUUID, @NonNull BleNotifyCallback callback) {
+		if(!containDevice(device)) {
+			callback.onNotifyDisabled();
+			return;
+		}
+
+		getDeviceOp(device).enableNotify(serviceUUID, characteristicUUID, descriptorUUID, callback);
+	}
+
+	/**
+	 * Disable notify
+	 * @param device The device
+	 */
+	public void disableNotify(@NonNull BleDevice device) {
+		if(containDevice(device)) getDeviceOp(device).disableNotify();
 	}
 
 	/**

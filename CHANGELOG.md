@@ -1,6 +1,14 @@
 KnBle Change Log
 ==========
 
+Version 2.4.0 *(2023-05-02)*
+----------------------------
+- Add enableNotify method
+- Add disableNotify method
+- Add getBluetoothGatt method
+- DeviceOp: Use main thread only for connect / disconnect, use new thread for the rest
+- Various bug fixes and improvements
+
 Version 2.3.2 *(2023-04-25)*
 ----------------------------
 - Add setPreferredPhy function (Android 8+)

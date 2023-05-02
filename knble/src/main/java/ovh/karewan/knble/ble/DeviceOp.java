@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 
@@ -23,6 +24,7 @@ import java.util.UUID;
 import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
+import ovh.karewan.knble.interfaces.BleNotifyCallback;
 import ovh.karewan.knble.interfaces.BleReadCallback;
 import ovh.karewan.knble.interfaces.BleWriteCallback;
 import ovh.karewan.knble.struct.BleDevice;
@@ -32,14 +34,18 @@ import ovh.karewan.knble.utils.Utils;
 public class DeviceOp {
 	private static final String LOG = "KnBle##DeviceOp";
 
-	// Always use main thread with BluetoothGatt to avoid issues
+	// Always use main thread with connect/disconnect to avoid issues
 	private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 	private final BleDevice mDevice;
+
+	// Device Handler + Thread
+	private HandlerThread mdThread = null;
+	private Handler mdHandler = null;
 
 	private BleGattCallback mCallback;
 
 	private int mState = BleGattCallback.DISCONNECTED;
-	private BluetoothGatt mBluetoothGatt;
+	private volatile BluetoothGatt mBluetoothGatt;
 	private int mLastGattStatus = 0;
 
 	private boolean mLastWriteSuccess = false;
@@ -53,6 +59,13 @@ public class DeviceOp {
 
 	private BleReadCallback mReadCallback;
 	private BluetoothGattCharacteristic mReadCharacteristic;
+
+	private BleNotifyCallback mNotifyCallback;
+	private BluetoothGattCharacteristic mNotifyCharacteristic;
+
+	private BluetoothGattDescriptor mNotifyDescriptor;
+
+	private boolean mIsNotifyRead = false;
 
 	/**
 	 * Class constructor
@@ -161,6 +174,14 @@ public class DeviceOp {
 	}
 
 	/**
+	 * Set notify callback
+	 * @param callback BleReadCallback
+	 */
+	private synchronized void setNotifyCallback(@Nullable BleNotifyCallback callback) {
+		mNotifyCallback = callback;
+	}
+
+	/**
 	 * Set the BleGattCallback
 	 * @param calback BleGattCallback
 	 */
@@ -174,6 +195,14 @@ public class DeviceOp {
 	 */
 	private synchronized void setMtu(int mtu) {
 		mMtu = mtu;
+	}
+
+	/**
+	 * Set is notify read
+	 * @param state boolean
+	 */
+	private synchronized void setIsNotifyRead(boolean state) {
+		mIsNotifyRead = state;
 	}
 
 	/**
@@ -193,11 +222,54 @@ public class DeviceOp {
 	}
 
 	/**
+	 * Set notify BluetoothGattCharacteristic
+	 * @param characteristic read BluetoothGattCharacteristic
+	 */
+	private synchronized void setNotifyCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
+		mNotifyCharacteristic = characteristic;
+	}
+
+	/**
 	 * Set write BluetoothGattCharacteristic
 	 * @param characteristic write BluetoothGattCharacteristic
 	 */
 	private synchronized void setWriteCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
 		mWriteCharacteristic = characteristic;
+	}
+
+	/**
+	 * Set notify BluetoothGattCharacteristic
+	 * @param descriptor BluetoothGattDescriptor
+	 */
+	private synchronized void setNotifyDescriptor(@Nullable BluetoothGattDescriptor descriptor) {
+		mNotifyDescriptor = descriptor;
+	}
+
+	/**
+	 * Init Md Handler
+	 */
+	private synchronized void initMdHandler() {
+		destroyMdHandler();
+
+		mdThread = new HandlerThread(mDevice.getMac());
+		mdThread.start();
+
+		mdHandler = new Handler(mdThread.getLooper());
+	}
+
+	/**
+	 * Destroy Md Handler
+	 */
+	private synchronized void destroyMdHandler() {
+		if(mdHandler != null) {
+			mdHandler.removeCallbacksAndMessages(null);
+			mdHandler = null;
+		}
+
+		if(mdThread != null) {
+			mdThread.quit();
+			mdThread = null;
+		}
 	}
 
 	/**
@@ -214,7 +286,7 @@ public class DeviceOp {
 				// Connected
 				case BluetoothProfile.STATE_CONNECTED:
 					// Discover gatt services with 250ms of delay for slow devices
-					mMainHandler.postDelayed(mBluetoothGatt::discoverServices, 250);
+					if(mdHandler != null) mdHandler.postDelayed(mBluetoothGatt::discoverServices, 250);
 					break;
 
 				// Disconnect
@@ -234,7 +306,7 @@ public class DeviceOp {
 			if(mState == BleGattCallback.CONNECTED) return;
 			setState(BleGattCallback.CONNECTED);
 
-			mMainHandler.post(() -> {
+			if(mdHandler != null) mdHandler.post(() -> {
 				if(mCallback != null) mCallback.onConnectSuccess(gatt.getServices());
 			});
 		}
@@ -245,8 +317,8 @@ public class DeviceOp {
 			super.onCharacteristicWrite(gatt, characteristic, status);
 			setLastGattStatus(status);
 
-			// Run on the main thread
-			mMainHandler.post(() -> {
+			// Run on the md thread
+			if(mdHandler != null) mdHandler.post(() -> {
 				// if success
 				if(status == BluetoothGatt.GATT_SUCCESS) {
 					// Set last write to success
@@ -282,18 +354,29 @@ public class DeviceOp {
 			super.onCharacteristicRead(gatt, characteristic, status);
 			setLastGattStatus(status);
 
-			// Run on the main thread
-			mMainHandler.post(() -> {
-				// If success
-				if(status == BluetoothGatt.GATT_SUCCESS) {
-					if(mReadCallback != null) mReadCallback.onReadSuccess(characteristic.getValue());
-				} else {
-					if(mReadCallback != null) mReadCallback.onReadFailed();
-				}
+			// Run on the md thread
+			if(mdHandler != null) mdHandler.post(() -> {
+				if(mIsNotifyRead) {
+					setIsNotifyRead(false);
 
-				// Clean
-				setReadCallback(null);
-				setReadCharacteristic(null);
+					// If success
+					if(status == BluetoothGatt.GATT_SUCCESS) {
+						if(mNotifyCallback != null) mNotifyCallback.onNotify(characteristic.getValue());
+					} else {
+						if(mNotifyCallback != null) mNotifyCallback.onNotifyFailed();
+					}
+				} else {
+					// If success
+					if(status == BluetoothGatt.GATT_SUCCESS) {
+						if(mReadCallback != null) mReadCallback.onReadSuccess(characteristic.getValue());
+					} else {
+						if(mReadCallback != null) mReadCallback.onReadFailed();
+					}
+
+					// Clean
+					setReadCallback(null);
+					setReadCharacteristic(null);
+				}
 			});
 		}
 
@@ -301,36 +384,71 @@ public class DeviceOp {
 		public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
 			if(KnBle.DEBUG) Log.d(LOG, "onCharacteristicChanged characteristic=" + characteristic.getUuid().toString());
 			super.onCharacteristicChanged(gatt, characteristic);
+
+			// Run on the md thread
+			if(mdHandler != null) mdHandler.post(() -> {
+				if(mBluetoothGatt == null
+						|| mNotifyCallback == null
+						|| mNotifyCharacteristic == null
+						|| !characteristic.getUuid().equals(mNotifyCharacteristic.getUuid())) return;
+
+				setIsNotifyRead(true);
+				mBluetoothGatt.readCharacteristic(mNotifyCharacteristic);
+			});
 		}
 
 		@Override
 		public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onReliableWriteCompleted status=" + status);
 			super.onReliableWriteCompleted(gatt, status);
+			setLastGattStatus(status);
 		}
 
 		@Override
 		public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onDescriptorRead descriptor=" + descriptor.getUuid().toString() + " status=" + status);
 			super.onDescriptorRead(gatt, descriptor, status);
+			setLastGattStatus(status);
 		}
 
 		@Override
 		public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onDescriptorWrite descriptor=" + descriptor.getUuid().toString() + " status=" + status);
 			super.onDescriptorWrite(gatt, descriptor, status);
+			setLastGattStatus(status);
+
+			// Run on the md thread
+			if(mdHandler != null) mdHandler.post(() -> {
+				if(mNotifyCallback == null) return;
+
+				// If success
+				if(status == BluetoothGatt.GATT_SUCCESS) {
+					if(mNotifyCharacteristic != null) mNotifyCallback.onNotifyEnabled();
+					else {
+						mNotifyCallback.onNotifyDisabled();
+						setNotifyCallback(null);
+					}
+				} else {
+					mNotifyCallback.onNotifyDisabled();
+					setNotifyCharacteristic(null);
+					setNotifyDescriptor(null);
+					setNotifyCallback(null);
+				}
+			});
 		}
 
 		@Override
 		public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onReadRemoteRssi rssi=" + rssi + " status=" + status);
 			super.onReadRemoteRssi(gatt, rssi, status);
+			setLastGattStatus(status);
 		}
 
 		@Override
 		public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onMtuChanged mtu=" + mtu + " status=" + status);
 			super.onMtuChanged(gatt, mtu, status);
+			setLastGattStatus(status);
 			setMtu(mtu);
 		}
 
@@ -338,12 +456,14 @@ public class DeviceOp {
 		public void onPhyUpdate(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onPhyUpdate txPhy=" + txPhy + " rxPhy=" + rxPhy + " status=" + status);
 			super.onPhyUpdate(gatt, txPhy, rxPhy, status);
+			setLastGattStatus(status);
 		}
 
 		@Override
 		public void onPhyRead(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onPhyRead txPhy=" + txPhy + " rxPhy=" + rxPhy + " status=" + status);
 			super.onPhyRead(gatt, txPhy, rxPhy, status);
+			setLastGattStatus(status);
 		}
 	};
 
@@ -353,6 +473,9 @@ public class DeviceOp {
 	 */
 	public void connect(@NonNull BleGattCallback callback) {
 		if(KnBle.DEBUG) Log.d(LOG, "connect");
+
+		// Init the Md Handler
+		initMdHandler();
 
 		// Run on the main thread
 		mMainHandler.post(() -> {
@@ -426,8 +549,8 @@ public class DeviceOp {
 	public void hasService(@NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
 		if(KnBle.DEBUG) Log.d(LOG, "hasService serviceUUID=" + serviceUUID);
 
-		// Run on the main thread
-		mMainHandler.post(() -> {
+		// Run on the md thread
+		if(mdHandler != null) mdHandler.post(() -> {
 			// Check if is connected
 			if(!isConnected()) {
 				callback.onResponse(false);
@@ -448,8 +571,8 @@ public class DeviceOp {
 	public void hasCharacteristic(@NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
 		if(KnBle.DEBUG) Log.d(LOG, "hasCharacteristic serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID);
 
-		// Run on the main thread
-		mMainHandler.post(() -> {
+		// Run on the md thread
+		if(mdHandler != null) mdHandler.post(() -> {
 			// Check if is connected
 			if(!isConnected()) {
 				callback.onResponse(false);
@@ -492,8 +615,8 @@ public class DeviceOp {
 		if(KnBle.DEBUG) Log.d(LOG, "write serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID
 				+ " datalen=" + data.length + " spliteSize=" + spliteSize + " sendNextWhenLastSuccess=" + sendNextWhenLastSuccess + " intervalBetweenTwoPackage=" + intervalBetweenTwoPackage);
 
-		// Run on the main thread
-		mMainHandler.post(() -> {
+		// Run on the md thread
+		if(mdHandler != null) mdHandler.post(() -> {
 			// Check if is connected
 			if(mBluetoothGatt == null) {
 				if(KnBle.DEBUG) Log.d(LOG, "write mBluetoothGatt is null");
@@ -512,7 +635,7 @@ public class DeviceOp {
 			// Get the characteristic
 			setWriteCharacteristic(service.getCharacteristic(UUID.fromString(characteristicUUID)));
 			if(mWriteCharacteristic == null || (mWriteCharacteristic.getProperties() & (BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) == 0) {
-				if(KnBle.DEBUG) Log.d(LOG, "write characteristic is null");
+				if(KnBle.DEBUG) Log.d(LOG, "write characteristic is null or write flag = 0");
 				callback.onWriteFailed();
 				return;
 			}
@@ -573,7 +696,7 @@ public class DeviceOp {
 		// If no wait success
 		if(!mWriteAfterSuccess) {
 			mWriteCallback.onWriteProgress(mWriteTotalPkg-mWriteQueue.size(), mWriteTotalPkg);
-			mMainHandler.postDelayed(this::write, mWriteInterval);
+			if(mdHandler != null) mdHandler.postDelayed(this::write, mWriteInterval);
 		}
 	}
 
@@ -585,7 +708,7 @@ public class DeviceOp {
 		if(KnBle.DEBUG) Log.d(LOG, "requestConnectionPriority connectionPriority=" + connectionPriority);
 		if(!isConnected()) return;
 
-		mMainHandler.post(() -> {
+		if(mdHandler != null) mdHandler.post(() -> {
 			if(mBluetoothGatt != null) mBluetoothGatt.requestConnectionPriority(connectionPriority);
 		});
 	}
@@ -598,7 +721,7 @@ public class DeviceOp {
 		if(KnBle.DEBUG) Log.d(LOG, "requestMtu mtu=" + mtu);
 		if(!isConnected()) return;
 
-		mMainHandler.post(() -> {
+		if(mdHandler != null) mdHandler.post(() -> {
 			if(mBluetoothGatt != null)  mBluetoothGatt.requestMtu(mtu);
 		});
 	}
@@ -614,7 +737,7 @@ public class DeviceOp {
 		if(KnBle.DEBUG) Log.d(LOG, "setPreferredPhy txPhy=" + txPhy + " rxPhy=" + rxPhy + " phyOptions=" + phyOptions);
 		if(!isConnected()) return;
 
-		mMainHandler.post(() -> {
+		if(mdHandler != null) mdHandler.post(() -> {
 			if(mBluetoothGatt != null)  mBluetoothGatt.setPreferredPhy(txPhy, rxPhy, phyOptions);
 		});
 	}
@@ -628,8 +751,8 @@ public class DeviceOp {
 	public void read(@NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
 		if(KnBle.DEBUG) Log.d(LOG, "read serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID);
 
-		// Run on the main thread
-		mMainHandler.post(() -> {
+		// Run on the md thread
+		if(mdHandler != null) mdHandler.post(() -> {
 			// Check if is connected
 			if(mBluetoothGatt == null) {
 				if(KnBle.DEBUG) Log.d(LOG, "read mBluetoothGatt is null");
@@ -648,7 +771,7 @@ public class DeviceOp {
 			// Get the characteristic
 			setReadCharacteristic(service.getCharacteristic(UUID.fromString(characteristicUUID)));
 			if(mReadCharacteristic == null || (mReadCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == 0) {
-				if(KnBle.DEBUG) Log.d(LOG, "read characteristic is null");
+				if(KnBle.DEBUG) Log.d(LOG, "read characteristic is null or flag read = 0");
 				callback.onReadFailed();
 				return;
 			}
@@ -662,13 +785,95 @@ public class DeviceOp {
 	}
 
 	/**
+	 * Enable notify
+	 * @param serviceUUID The service UUID
+	 * @param characteristicUUID The characteristic UUID
+	 * @param descriptorUUID The descriptor UUID
+	 * @param callback The callback
+	 */
+	public void enableNotify(@NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull String descriptorUUID, @NonNull BleNotifyCallback callback) {
+		if(KnBle.DEBUG) Log.d(LOG, "enableNotify serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID + " descriptorUUID=" + descriptorUUID);
+
+		// Run on the md thread
+		if(mdHandler != null) mdHandler.post(() -> {
+			// Check if is connected
+			if(mBluetoothGatt == null) {
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify mBluetoothGatt is null");
+				callback.onNotifyDisabled();
+				return;
+			}
+
+			// Get the service
+			BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(serviceUUID));
+			if(service == null) {
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify service is null");
+
+				callback.onNotifyDisabled();
+				return;
+			}
+
+			// Get the characteristic
+			setNotifyCharacteristic(service.getCharacteristic(UUID.fromString(characteristicUUID)));
+			if(mNotifyCharacteristic == null
+					|| (mNotifyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == 0
+					|| (mNotifyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
+
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify characteristic is null or flag read = 0 or flag notify = 0");
+				mNotifyCharacteristic = null;
+				callback.onNotifyDisabled();
+				return;
+			}
+
+			// Get the descriptor
+			setNotifyDescriptor(mNotifyCharacteristic.getDescriptor(UUID.fromString(descriptorUUID)));
+			if(mNotifyDescriptor == null) {
+
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify descriptor is null");
+				mNotifyCharacteristic = null;
+				callback.onNotifyDisabled();
+				return;
+			}
+
+			// Set the callback
+			setNotifyCallback(callback);
+
+			// Enable notification
+			mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, true);
+			mNotifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+			mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
+		});
+	}
+
+	/**
+	 * Disable notify
+	 */
+	public void disableNotify() {
+		if(KnBle.DEBUG) Log.d(LOG, "disableNotify");
+
+		// Run on the md thread
+		if(mdHandler != null) mdHandler.post(() -> {
+			if(mBluetoothGatt == null || mNotifyCharacteristic == null || mNotifyDescriptor == null) return;
+
+			// Disable notification
+			mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, false);
+			setNotifyCharacteristic(null);
+			mNotifyDescriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+			mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
+			setNotifyDescriptor(null);
+		});
+	}
+
+	/**
 	 * Disconnect the device
 	 */
 	public void disconnect() {
 		if(KnBle.DEBUG) Log.d(LOG, "disconnect");
 
-		// Clear the handler
+		// Clear the main handler
 		mMainHandler.removeCallbacksAndMessages(null);
+
+		// Destroy the Md Handler
+		destroyMdHandler();
 
 		// Run on the main thread
 		mMainHandler.post(() -> {
@@ -689,6 +894,20 @@ public class DeviceOp {
 				mCallback.onDisconnected();
 				setGattCallback(null);
 			}
+
+			// Clean
+			setWriteCharacteristic(null);
+			setWriteCallback(null);
+			setWriteQueue(null);
+			setLastWriteSuccess(false);
+			setReadCharacteristic(null);
+			setReadCallback(null);
+			setNotifyCharacteristic(null);
+			setNotifyDescriptor(null);
+			setNotifyCallback(null);
+			setIsNotifyRead(false);
+			setLastGattStatus(0);
+			setMtu(23);
 		});
 	}
 
@@ -699,7 +918,7 @@ public class DeviceOp {
 	private void clearDeviceCache() {
 		if(KnBle.DEBUG) Log.d(LOG, "clearDeviceCache");
 
-		mMainHandler.post(() -> {
+		if(mdHandler != null) mdHandler.post(() -> {
 			try {
 				Method refresh = mBluetoothGatt.getClass().getMethod("refresh");
 				refresh.invoke(mBluetoothGatt);

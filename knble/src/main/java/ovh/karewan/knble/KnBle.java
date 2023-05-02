@@ -2,6 +2,7 @@ package ovh.karewan.knble;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -18,6 +19,7 @@ import java.util.List;
 import ovh.karewan.knble.ble.DevicesManager;
 import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
+import ovh.karewan.knble.interfaces.BleNotifyCallback;
 import ovh.karewan.knble.interfaces.BleReadCallback;
 import ovh.karewan.knble.interfaces.BleScanCallback;
 import ovh.karewan.knble.interfaces.BleWriteCallback;
@@ -272,6 +274,16 @@ public class KnBle {
 	}
 
 	/**
+	 * Get the BluetoothGatt of a device
+	 * @param device The device
+	 * @return BluetoothGatt|null
+	 */
+	@Nullable
+	public BluetoothGatt getBluetoothGatt(@NonNull BleDevice device) {
+		return DevicesManager.gi().getBluetoothGatt(device);
+	}
+
+	/**
 	 * Get the last gatt status of a device
 	 * @param device The device
 	 * @return The last gatt status
@@ -414,6 +426,26 @@ public class KnBle {
 	 */
 	public void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
 		DevicesManager.gi().read(device, serviceUUID, characteristicUUID, callback);
+	}
+
+	/**
+	 * Enable notify
+	 * @param device The device
+	 * @param serviceUUID The service UUID
+	 * @param characteristicUUID The characteristic UUID
+	 * @param descriptorUUID The descriptor UUID
+	 * @param callback The call back
+	 */
+	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull String descriptorUUID, @NonNull BleNotifyCallback callback) {
+		DevicesManager.gi().enableNotify(device, serviceUUID, characteristicUUID, descriptorUUID, callback);
+	}
+
+	/**
+	 * Disable notify
+	 * @param device The device
+	 */
+	public void disableNotify(@NonNull BleDevice device) {
+		DevicesManager.gi().disableNotify(device);
 	}
 
 	/**
