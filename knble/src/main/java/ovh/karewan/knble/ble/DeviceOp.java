@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -34,38 +35,46 @@ import ovh.karewan.knble.utils.Utils;
 public class DeviceOp {
 	private static final String LOG = "KnBle##DeviceOp";
 
+	// Nb max of retry
+	private static final int MAX_RETRY = 80;
+
+	// Delay between retry
+	private static final int RETRY_DELAY = 60;
+
 	// Always use main thread with connect/disconnect to avoid issues
 	private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 	private final BleDevice mDevice;
 
 	// Device Handler + Thread
-	private HandlerThread mdThread = null;
-	private Handler mdHandler = null;
+	private volatile HandlerThread mdThread = null;
+	private volatile Handler mdHandler = null;
 
-	private BleGattCallback mCallback;
+	private volatile BleGattCallback mCallback;
 
-	private int mState = BleGattCallback.DISCONNECTED;
+	private volatile int mState = BleGattCallback.DISCONNECTED;
 	private volatile BluetoothGatt mBluetoothGatt;
-	private int mLastGattStatus = 0;
+	private volatile int mLastGattStatus = 0;
 
-	private boolean mLastWriteSuccess = false;
-	private BleWriteCallback mWriteCallback;
-	private BluetoothGattCharacteristic mWriteCharacteristic;
-	private Queue<byte[]> mWriteQueue;
-	private int mWriteTotalPkg;
-	private boolean mWriteAfterSuccess;
-	private long mWriteInterval;
-	private int mMtu = 23;
+	private volatile boolean mLastWriteSuccess = false;
+	private volatile BleWriteCallback mWriteCallback;
+	private volatile BluetoothGattCharacteristic mWriteCharacteristic;
+	private volatile Queue<byte[]> mWriteQueue;
+	private volatile int mWriteTotalPkg;
+	private volatile boolean mWriteAfterSuccess;
+	private volatile long mWriteInterval;
+	private volatile int mWriteRetry = 0;
 
-	private BleReadCallback mReadCallback;
-	private BluetoothGattCharacteristic mReadCharacteristic;
+	private volatile int mMtu = 23;
 
-	private BleNotifyCallback mNotifyCallback;
-	private BluetoothGattCharacteristic mNotifyCharacteristic;
+	private volatile BleReadCallback mReadCallback;
+	private volatile BluetoothGattCharacteristic mReadCharacteristic;
 
-	private BluetoothGattDescriptor mNotifyDescriptor;
+	private volatile BleNotifyCallback mNotifyCallback;
+	private volatile BluetoothGattCharacteristic mNotifyCharacteristic;
 
-	private boolean mIsNotifyRead = false;
+	private volatile BluetoothGattDescriptor mNotifyDescriptor;
+
+	private volatile boolean mIsNotifyRead = false;
 
 	/**
 	 * Class constructor
@@ -203,6 +212,20 @@ public class DeviceOp {
 	 */
 	private synchronized void setIsNotifyRead(boolean state) {
 		mIsNotifyRead = state;
+	}
+
+	/**
+	 * Inc write retry
+	 */
+	private synchronized void incWriteRetry() {
+		mWriteRetry++;
+	}
+
+	/**
+	 * Reset write retry
+	 */
+	private synchronized void resetWriteRetry() {
+		mWriteRetry = 0;
 	}
 
 	/**
@@ -617,6 +640,7 @@ public class DeviceOp {
 
 		// Run on the md thread
 		if(mdHandler != null) mdHandler.post(() -> {
+
 			// Check if is connected
 			if(mBluetoothGatt == null) {
 				if(KnBle.DEBUG) Log.d(LOG, "write mBluetoothGatt is null");
@@ -640,19 +664,24 @@ public class DeviceOp {
 				return;
 			}
 
-			// Set write type
-			if(!sendNextWhenLastSuccess && (mWriteCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) mWriteCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-			else mWriteCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+			// Force write after success if no response is not available
+			boolean writeAfterSuccess = sendNextWhenLastSuccess;
+			if(!writeAfterSuccess && (mWriteCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) == 0) writeAfterSuccess = true;
 
 			// Split the data and create the queue
 			setWriteQueue(Utils.splitBytesArray(data, split, spliteSize));
 
+			// Set params
 			synchronized (DeviceOp.class) {
 				mWriteTotalPkg = mWriteQueue.size();
-				mWriteAfterSuccess = sendNextWhenLastSuccess;
+				mWriteAfterSuccess = writeAfterSuccess;
 				mWriteInterval = intervalBetweenTwoPackage;
 			}
 
+			// Reset write retry
+			resetWriteRetry();
+
+			// Set callback
 			setWriteCallback(callback);
 
 			// Start write
@@ -669,13 +698,14 @@ public class DeviceOp {
 		// Check if queue is empty
 		if(mWriteQueue == null || mWriteQueue.peek() == null) {
 			// If last write is a success
-			if(mLastWriteSuccess) mWriteCallback.onWriteSuccess();
+			if(mLastWriteSuccess && mWriteCallback != null) mWriteCallback.onWriteSuccess();
 			else if(KnBle.DEBUG) Log.d(LOG, "private write lastWriteSuccess==false");
 
 			// Cleanup
 			setWriteCharacteristic(null);
 			setWriteQueue(null);
 			setWriteCallback(null);
+			resetWriteRetry();
 			return;
 		}
 
@@ -686,16 +716,62 @@ public class DeviceOp {
 			return;
 		}
 
-		// Set value to the Characteristic
-		byte[] data = mWriteQueue.poll();
-		mWriteCharacteristic.setValue(data);
+		// Get data part from the queue without remove
+		byte[] data = mWriteQueue.peek();
+
+		// Write type
+		int writeType = mWriteAfterSuccess ? BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT : BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE;
 
 		// Write
-		mBluetoothGatt.writeCharacteristic(mWriteCharacteristic);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			int success = mBluetoothGatt.writeCharacteristic(mWriteCharacteristic, data, writeType);
+			if(KnBle.DEBUG) Log.d(LOG, "private writeCharacteristic=" + success);
+
+			// Failed
+			if(!mWriteAfterSuccess && success != BluetoothStatusCodes.SUCCESS) {
+				if(mdHandler != null && mWriteRetry < MAX_RETRY) {
+					incWriteRetry();
+					mdHandler.postDelayed(this::write, RETRY_DELAY);
+				} else if(mWriteCallback != null) {
+					setLastWriteSuccess(false);
+					setWriteQueue(null);
+					mWriteCallback.onWriteFailed();
+					setWriteCallback(null);
+				}
+
+				return;
+			} else {
+				resetWriteRetry();
+			}
+		} else {
+			mWriteCharacteristic.setWriteType(writeType);
+			boolean success = mWriteCharacteristic.setValue(data) && mBluetoothGatt.writeCharacteristic(mWriteCharacteristic);
+			if(KnBle.DEBUG) Log.d(LOG, "private writeCharacteristic=" + success);
+
+			// Failed
+			if(!mWriteAfterSuccess && !success) {
+				if(mdHandler != null && mWriteRetry < MAX_RETRY) {
+					mdHandler.postDelayed(this::write, RETRY_DELAY);
+					incWriteRetry();
+				} else if(mWriteCallback != null) {
+					setLastWriteSuccess(false);
+					setWriteQueue(null);
+					mWriteCallback.onWriteFailed();
+					setWriteCallback(null);
+				}
+
+				return;
+			} else {
+				resetWriteRetry();
+			}
+		}
+
+		// Remove data part from queue
+		mWriteQueue.poll();
 
 		// If no wait success
 		if(!mWriteAfterSuccess) {
-			mWriteCallback.onWriteProgress(mWriteTotalPkg-mWriteQueue.size(), mWriteTotalPkg);
+			if(mWriteCallback != null) mWriteCallback.onWriteProgress(mWriteTotalPkg-mWriteQueue.size(), mWriteTotalPkg);
 			if(mdHandler != null) mdHandler.postDelayed(this::write, mWriteInterval);
 		}
 	}
@@ -819,7 +895,7 @@ public class DeviceOp {
 					|| (mNotifyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
 
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify characteristic is null or flag read = 0 or flag notify = 0");
-				mNotifyCharacteristic = null;
+				setNotifyCharacteristic(null);
 				callback.onNotifyDisabled();
 				return;
 			}
@@ -829,7 +905,17 @@ public class DeviceOp {
 			if(mNotifyDescriptor == null) {
 
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify descriptor is null");
-				mNotifyCharacteristic = null;
+				setNotifyCharacteristic(null);
+				setNotifyDescriptor(null);
+				callback.onNotifyDisabled();
+				return;
+			}
+
+			// Enable notification
+			if(!mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, true)) {
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify failed to enable characteristic notification");
+				setNotifyCharacteristic(null);
+				setNotifyDescriptor(null);
 				callback.onNotifyDisabled();
 				return;
 			}
@@ -837,10 +923,29 @@ public class DeviceOp {
 			// Set the callback
 			setNotifyCallback(callback);
 
-			// Enable notification
-			mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, true);
-			mNotifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-			mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
+			// Write descriptor
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+				int success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify writeDescriptor=" + success);
+
+				if(success != BluetoothStatusCodes.SUCCESS) {
+					setNotifyCharacteristic(null);
+					setNotifyDescriptor(null);
+					setNotifyCallback(null);
+					callback.onNotifyDisabled();
+				}
+			} else {
+				mNotifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+				boolean success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify writeDescriptor=" + success);
+
+				if(!success) {
+					setNotifyCharacteristic(null);
+					setNotifyDescriptor(null);
+					setNotifyCallback(null);
+					callback.onNotifyDisabled();
+				}
+			}
 		});
 	}
 
@@ -855,10 +960,21 @@ public class DeviceOp {
 			if(mBluetoothGatt == null || mNotifyCharacteristic == null || mNotifyDescriptor == null) return;
 
 			// Disable notification
-			mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, false);
+			boolean stopNotif = mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, false);
+			if(KnBle.DEBUG) Log.d(LOG, "disableNotify setCharacteristicNotification=" + stopNotif);
+
+			// Write descriptor
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+				int success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+				if(KnBle.DEBUG) Log.d(LOG, "disableNotify writeDescriptor=" + success);
+			} else {
+				mNotifyDescriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+				boolean success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
+				if(KnBle.DEBUG) Log.d(LOG, "disableNotify writeDescriptor=" + success);
+			}
+
+			// Clear
 			setNotifyCharacteristic(null);
-			mNotifyDescriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
-			mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
 			setNotifyDescriptor(null);
 		});
 	}
@@ -900,6 +1016,7 @@ public class DeviceOp {
 			setWriteCallback(null);
 			setWriteQueue(null);
 			setLastWriteSuccess(false);
+			resetWriteRetry();
 			setReadCharacteristic(null);
 			setReadCallback(null);
 			setNotifyCharacteristic(null);
