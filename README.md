@@ -269,6 +269,36 @@ KnBle.gi().read(device, "service uuid", "characteristic uuid", new BleReadCallba
 });
 ```
 
+#### Enable characteristic notification
+```java
+KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", "descriptor uuid", new BleNotifyCallback() {
+	@Override
+	public void onNotifyEnabled() {
+
+	}
+
+	@Override
+	public void onNotifyDisabled() {
+
+	}
+
+	@Override
+	public void onNotify(byte[] data) {
+
+	}
+
+	@Override
+	public void onNotifyFailed() {
+
+	}
+});
+```
+
+#### Disable characteristic notification
+```java
+KnBle.gi().disableNotify(device);
+```
+
 #### Request connection priority
 ```java
 KnBle.gi().requestConnectionPriority(device, connectionPriority);
@@ -311,6 +341,12 @@ int state = KnBle.gi().getDeviceConnState(device);
 // BleGattCallback.DISCONNECTED
 // BleGattCallback.CONNECTING
 // BleGattCallback.CONNECTED
+```
+
+#### Get the BluetoothGatt of a device
+```java
+@Nullable
+BluetoothGatt gatt = KnBle.gi().getBluetoothGatt(device);
 ```
 
 #### Get last gatt status code of a device
