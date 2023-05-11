@@ -74,8 +74,6 @@ public class DeviceOp {
 
 	private volatile BluetoothGattDescriptor mNotifyDescriptor;
 
-	private volatile boolean mIsNotifyRead = false;
-
 	/**
 	 * Class constructor
 	 * @param device The device
@@ -204,14 +202,6 @@ public class DeviceOp {
 	 */
 	private synchronized void setMtu(int mtu) {
 		mMtu = mtu;
-	}
-
-	/**
-	 * Set is notify read
-	 * @param state boolean
-	 */
-	private synchronized void setIsNotifyRead(boolean state) {
-		mIsNotifyRead = state;
 	}
 
 	/**
@@ -379,27 +369,14 @@ public class DeviceOp {
 
 			// Run on the md thread
 			if(mdHandler != null) mdHandler.post(() -> {
-				if(mIsNotifyRead) {
-					setIsNotifyRead(false);
-
-					// If success
-					if(status == BluetoothGatt.GATT_SUCCESS) {
-						if(mNotifyCallback != null) mNotifyCallback.onNotify(characteristic.getValue());
-					} else {
-						if(mNotifyCallback != null) mNotifyCallback.onNotifyFailed();
-					}
-				} else {
-					// If success
-					if(status == BluetoothGatt.GATT_SUCCESS) {
-						if(mReadCallback != null) mReadCallback.onReadSuccess(characteristic.getValue());
-					} else {
-						if(mReadCallback != null) mReadCallback.onReadFailed();
-					}
-
-					// Clean
-					setReadCallback(null);
-					setReadCharacteristic(null);
+				if(mReadCallback != null) {
+					if(status == BluetoothGatt.GATT_SUCCESS) mReadCallback.onReadSuccess(characteristic.getValue());
+					else mReadCallback.onReadFailed();
 				}
+
+				// Clean
+				setReadCallback(null);
+				setReadCharacteristic(null);
 			});
 		}
 
@@ -410,13 +387,11 @@ public class DeviceOp {
 
 			// Run on the md thread
 			if(mdHandler != null) mdHandler.post(() -> {
-				if(mBluetoothGatt == null
-						|| mNotifyCallback == null
+				if(mNotifyCallback == null
 						|| mNotifyCharacteristic == null
 						|| !characteristic.getUuid().equals(mNotifyCharacteristic.getUuid())) return;
 
-				setIsNotifyRead(true);
-				mBluetoothGatt.readCharacteristic(mNotifyCharacteristic);
+				mNotifyCallback.onNotify(characteristic.getValue());
 			});
 		}
 
@@ -1022,7 +997,6 @@ public class DeviceOp {
 			setNotifyCharacteristic(null);
 			setNotifyDescriptor(null);
 			setNotifyCallback(null);
-			setIsNotifyRead(false);
 			setLastGattStatus(0);
 			setMtu(23);
 		});

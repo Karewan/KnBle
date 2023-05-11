@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.4.1'
+	implementation 'com.github.Karewan:KnBle:2.4.2'
 }
 ```
 
@@ -284,11 +284,6 @@ KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", "descript
 
 	@Override
 	public void onNotify(byte[] data) {
-
-	}
-
-	@Override
-	public void onNotifyFailed() {
 
 	}
 });

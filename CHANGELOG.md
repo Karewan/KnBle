@@ -1,6 +1,10 @@
 KnBle Change Log
 ==========
 
+Version 2.4.2 *(2023-05-11)*
+----------------------------
+- Various bug fixes and improvements
+
 Version 2.4.1 *(2023-05-02)*
 ----------------------------
 - Write no response, correctly handle remote gatt busy and retry every 60ms, 80 times
