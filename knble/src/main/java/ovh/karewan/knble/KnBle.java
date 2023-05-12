@@ -485,7 +485,7 @@ public class KnBle {
 			if((intent == null || intent.getAction() == null || !intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED) || mBluetoothAdapter == null)
 					|| (mBluetoothAdapter.getState() != BluetoothAdapter.STATE_TURNING_OFF && mBluetoothAdapter.getState() != BluetoothAdapter.STATE_OFF)) return;
 
-			Scanner.gi().stopScan();
+			Scanner.gi().handleBtTurningOff();
 			DevicesManager.gi().disconnectAll();
 		}
 	};

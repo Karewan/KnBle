@@ -455,4 +455,16 @@ public class Scanner {
 		clearScannedDevices();
 		setLastError(BleScanCallback.NO_ERROR);
 	}
+
+	/**
+	 * Handle BT turning off
+	 */
+	public void handleBtTurningOff() {
+		// Scanning must be in progress
+		if(!isScanning()) return;
+
+		// If scan autorestart is enable
+		if(mScanSettings.getAutoRestartScanAfter() > 0 && mCallback != null) startScan(mCallback);
+		else stopScan();
+	}
 }
