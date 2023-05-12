@@ -10,8 +10,8 @@ android {
 	defaultConfig {
 		minSdk 23
 		targetSdk 33
-		versionCode 242
-		versionName "2.4.2"
+		versionCode 243
+		versionName "2.4.3"
 		consumerProguardFiles 'proguard-rules.pro'
 	}
 
@@ -37,7 +37,8 @@ android {
 }
 
 dependencies {
-	api 'androidx.annotation:annotation:1.6.0'
+	implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.21"))
+	implementation 'androidx.annotation:annotation:1.6.0'
 }
 
 afterEvaluate {

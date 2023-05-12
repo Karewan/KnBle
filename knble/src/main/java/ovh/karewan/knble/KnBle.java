@@ -4,7 +4,10 @@ import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
@@ -59,6 +62,9 @@ public class KnBle {
 	 * @return boolean
 	 */
 	public boolean init(@NonNull Context context) {
+		// Prevent double init
+		if(mContext != null && mContext.get() != null) return true;
+
 		// Check if device support BLE
 		if(!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) return false;
 
@@ -78,6 +84,7 @@ public class KnBle {
 
 		// Store context into weakref to avoid memory leaks
 		mContext = new WeakReference<>(context);
+		mContext.get().registerReceiver(mBtStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
 
 		// Init success
 		return true;
@@ -433,11 +440,10 @@ public class KnBle {
 	 * @param device The device
 	 * @param serviceUUID The service UUID
 	 * @param characteristicUUID The characteristic UUID
-	 * @param descriptorUUID The descriptor UUID
 	 * @param callback The call back
 	 */
-	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull String descriptorUUID, @NonNull BleNotifyCallback callback) {
-		DevicesManager.gi().enableNotify(device, serviceUUID, characteristicUUID, descriptorUUID, callback);
+	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleNotifyCallback callback) {
+		DevicesManager.gi().enableNotify(device, serviceUUID, characteristicUUID, callback);
 	}
 
 	/**
@@ -469,4 +475,18 @@ public class KnBle {
 	public void destroyAllDevices() {
 		DevicesManager.gi().destroy();
 	}
+
+	/**
+	 * BT State Receiver
+	 */
+	private final BroadcastReceiver mBtStateReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if((intent == null || intent.getAction() == null || !intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED) || mBluetoothAdapter == null)
+					|| (mBluetoothAdapter.getState() != BluetoothAdapter.STATE_TURNING_OFF && mBluetoothAdapter.getState() != BluetoothAdapter.STATE_OFF)) return;
+
+			Scanner.gi().stopScan();
+			DevicesManager.gi().disconnectAll();
+		}
+	};
 }

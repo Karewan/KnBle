@@ -839,11 +839,10 @@ public class DeviceOp {
 	 * Enable notify
 	 * @param serviceUUID The service UUID
 	 * @param characteristicUUID The characteristic UUID
-	 * @param descriptorUUID The descriptor UUID
 	 * @param callback The callback
 	 */
-	public void enableNotify(@NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull String descriptorUUID, @NonNull BleNotifyCallback callback) {
-		if(KnBle.DEBUG) Log.d(LOG, "enableNotify serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID + " descriptorUUID=" + descriptorUUID);
+	public void enableNotify(@NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleNotifyCallback callback) {
+		if(KnBle.DEBUG) Log.d(LOG, "enableNotify serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID);
 
 		// Run on the md thread
 		if(mdHandler != null) mdHandler.post(() -> {
@@ -865,9 +864,7 @@ public class DeviceOp {
 
 			// Get the characteristic
 			setNotifyCharacteristic(service.getCharacteristic(UUID.fromString(characteristicUUID)));
-			if(mNotifyCharacteristic == null
-					|| (mNotifyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == 0
-					|| (mNotifyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
+			if(mNotifyCharacteristic == null || (mNotifyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
 
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify characteristic is null or flag read = 0 or flag notify = 0");
 				setNotifyCharacteristic(null);
@@ -876,10 +873,10 @@ public class DeviceOp {
 			}
 
 			// Get the descriptor
-			setNotifyDescriptor(mNotifyCharacteristic.getDescriptor(UUID.fromString(descriptorUUID)));
+			setNotifyDescriptor(mNotifyCharacteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")));
 			if(mNotifyDescriptor == null) {
-
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify descriptor is null");
+
 				setNotifyCharacteristic(null);
 				setNotifyDescriptor(null);
 				callback.onNotifyDisabled();
@@ -889,6 +886,7 @@ public class DeviceOp {
 			// Enable notification
 			if(!mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, true)) {
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify failed to enable characteristic notification");
+
 				setNotifyCharacteristic(null);
 				setNotifyDescriptor(null);
 				callback.onNotifyDisabled();

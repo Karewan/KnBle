@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.4.2'
+	implementation 'com.github.Karewan:KnBle:2.4.3'
 }
 ```
 
@@ -271,7 +271,7 @@ KnBle.gi().read(device, "service uuid", "characteristic uuid", new BleReadCallba
 
 #### Enable characteristic notification
 ```java
-KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", "descriptor uuid", new BleNotifyCallback() {
+KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", new BleNotifyCallback() {
 	@Override
 	public void onNotifyEnabled() {
 

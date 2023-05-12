@@ -292,16 +292,15 @@ public class DevicesManager {
 	 * @param device The device
 	 * @param serviceUUID The service UUID
 	 * @param characteristicUUID The characteristic UUID
-	 * @param descriptorUUID The descriptor UUID
 	 * @param callback The call back
 	 */
-	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull String descriptorUUID, @NonNull BleNotifyCallback callback) {
+	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleNotifyCallback callback) {
 		if(!containDevice(device)) {
 			callback.onNotifyDisabled();
 			return;
 		}
 
-		getDeviceOp(device).enableNotify(serviceUUID, characteristicUUID, descriptorUUID, callback);
+		getDeviceOp(device).enableNotify(serviceUUID, characteristicUUID, callback);
 	}
 
 	/**
