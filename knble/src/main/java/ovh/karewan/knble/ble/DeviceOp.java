@@ -703,7 +703,7 @@ public class DeviceOp {
 			if(KnBle.DEBUG) Log.d(LOG, "private writeCharacteristic=" + success);
 
 			// Failed
-			if(!mWriteAfterSuccess && success != BluetoothStatusCodes.SUCCESS) {
+			if(success != BluetoothStatusCodes.SUCCESS) {
 				if(mdHandler != null && mWriteRetry < MAX_RETRY) {
 					incWriteRetry();
 					mdHandler.postDelayed(this::write, RETRY_DELAY);
@@ -724,7 +724,7 @@ public class DeviceOp {
 			if(KnBle.DEBUG) Log.d(LOG, "private writeCharacteristic=" + success);
 
 			// Failed
-			if(!mWriteAfterSuccess && !success) {
+			if(!success) {
 				if(mdHandler != null && mWriteRetry < MAX_RETRY) {
 					mdHandler.postDelayed(this::write, RETRY_DELAY);
 					incWriteRetry();
