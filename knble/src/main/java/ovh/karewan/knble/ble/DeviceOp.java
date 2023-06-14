@@ -346,17 +346,15 @@ public class DeviceOp {
 						write();
 					}
 				} else {
-					// Set last write to fail
-					setLastWriteSuccess(false);
-
-					// Clear the write queue
-					setWriteQueue(null);
-
 					// Notify
-					if (mWriteCallback != null) {
-						mWriteCallback.onWriteFailed();
-						setWriteCallback(null);
-					}
+					if (mWriteCallback != null) mWriteCallback.onWriteFailed();
+
+					// Cleanup
+					setLastWriteSuccess(false);
+					setWriteCharacteristic(null);
+					setWriteQueue(null);
+					setWriteCallback(null);
+					resetWriteRetry();
 				}
 			});
 		}
@@ -677,6 +675,7 @@ public class DeviceOp {
 			else if(KnBle.DEBUG) Log.d(LOG, "private write lastWriteSuccess==false");
 
 			// Cleanup
+			setLastWriteSuccess(false);
 			setWriteCharacteristic(null);
 			setWriteQueue(null);
 			setWriteCallback(null);
@@ -688,6 +687,13 @@ public class DeviceOp {
 		if(mBluetoothGatt == null) {
 			if(KnBle.DEBUG) Log.d(LOG, "private write mBluetoothGatt is null");
 			if(mWriteCallback != null) mWriteCallback.onWriteFailed();
+
+			// Cleanup
+			setLastWriteSuccess(false);
+			setWriteCharacteristic(null);
+			setWriteQueue(null);
+			setWriteCallback(null);
+			resetWriteRetry();
 			return;
 		}
 
@@ -707,12 +713,17 @@ public class DeviceOp {
 				if(mdHandler != null && mWriteRetry < MAX_RETRY) {
 					incWriteRetry();
 					mdHandler.postDelayed(this::write, RETRY_DELAY);
+					return;
 				} else if(mWriteCallback != null) {
-					setLastWriteSuccess(false);
-					setWriteQueue(null);
 					mWriteCallback.onWriteFailed();
-					setWriteCallback(null);
 				}
+
+				// Cleanup
+				setLastWriteSuccess(false);
+				setWriteCharacteristic(null);
+				setWriteQueue(null);
+				setWriteCallback(null);
+				resetWriteRetry();
 
 				return;
 			} else {
@@ -728,12 +739,17 @@ public class DeviceOp {
 				if(mdHandler != null && mWriteRetry < MAX_RETRY) {
 					mdHandler.postDelayed(this::write, RETRY_DELAY);
 					incWriteRetry();
+					return;
 				} else if(mWriteCallback != null) {
-					setLastWriteSuccess(false);
-					setWriteQueue(null);
 					mWriteCallback.onWriteFailed();
-					setWriteCallback(null);
 				}
+
+				// Cleanup
+				setLastWriteSuccess(false);
+				setWriteCharacteristic(null);
+				setWriteQueue(null);
+				setWriteCallback(null);
+				resetWriteRetry();
 
 				return;
 			} else {
@@ -824,6 +840,7 @@ public class DeviceOp {
 			if(mReadCharacteristic == null || (mReadCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == 0) {
 				if(KnBle.DEBUG) Log.d(LOG, "read characteristic is null or flag read = 0");
 				callback.onReadFailed();
+				setReadCharacteristic(null);
 				return;
 			}
 
@@ -831,7 +848,11 @@ public class DeviceOp {
 			setReadCallback(callback);
 
 			// Read
-			if(!mBluetoothGatt.readCharacteristic(mReadCharacteristic)) callback.onReadFailed();
+			if(!mBluetoothGatt.readCharacteristic(mReadCharacteristic)) {
+				callback.onReadFailed();
+				setReadCallback(null);
+				setReadCharacteristic(null);
+			}
 		});
 	}
 
@@ -986,11 +1007,13 @@ public class DeviceOp {
 
 			// Clean
 			setWriteCharacteristic(null);
+			if(mWriteCallback != null) mWriteCallback.onWriteFailed();
 			setWriteCallback(null);
 			setWriteQueue(null);
 			setLastWriteSuccess(false);
 			resetWriteRetry();
 			setReadCharacteristic(null);
+			if(mReadCallback != null) mReadCallback.onReadFailed();
 			setReadCallback(null);
 			setNotifyCharacteristic(null);
 			setNotifyDescriptor(null);

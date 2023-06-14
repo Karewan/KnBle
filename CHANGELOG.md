@@ -1,6 +1,10 @@
 KnBle Change Log
 ==========
 
+Version 2.4.7 *(2023-06-14)*
+----------------------------
+- Various bug fixes and improvements
+
 Version 2.4.6 *(2023-06-14)*
 ----------------------------
 - Various bug fixes and improvements
