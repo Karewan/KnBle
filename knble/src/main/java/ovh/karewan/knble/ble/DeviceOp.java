@@ -831,7 +831,7 @@ public class DeviceOp {
 			setReadCallback(callback);
 
 			// Read
-			mBluetoothGatt.readCharacteristic(mReadCharacteristic);
+			if(!mBluetoothGatt.readCharacteristic(mReadCharacteristic)) callback.onReadFailed();
 		});
 	}
 
