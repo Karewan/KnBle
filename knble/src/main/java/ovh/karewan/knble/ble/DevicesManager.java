@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
@@ -24,7 +25,7 @@ public class DevicesManager {
 	private static volatile DevicesManager sInstance;
 
 	// Devices OP container
-	private final HashMap<String, DeviceOp> mDevicesOp = new HashMap<>();
+	private final ConcurrentHashMap<String, DeviceOp> mDevicesOp = new ConcurrentHashMap<>();
 
 	private DevicesManager() {}
 
@@ -86,7 +87,7 @@ public class DevicesManager {
 	 * @return mDevicesOp
 	 */
 	@NonNull
-	public HashMap<String, DeviceOp> getDevicesOpList() {
+	public ConcurrentHashMap<String, DeviceOp> getDevicesOpList() {
 		return mDevicesOp;
 	}
 
