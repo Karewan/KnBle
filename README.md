@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.5.0'
+	implementation 'com.github.Karewan:KnBle:3.0.0'
 }
 ```
 
@@ -301,6 +301,7 @@ KnBle.gi().requestConnectionPriority(device, connectionPriority);
 
 #### Request MTU change
 ```java
+KnBle.gi().requestMtu(device, mtu);
 KnBle.gi().requestMtu(device, mtu, callback);
 ```
 
@@ -371,16 +372,19 @@ KnBle.gi().enableBluetooth(false);
 
 #### Get the bluetooth adapter
 ```java
+@Nullable
 BluetoothAdapter adapter = KnBle.gi().getBluetoothAdapter();
 ```
 
 #### Get the bluetooth manager service
 ```java
+@Nullable
 BluetoothManager btManager = KnBle.gi().getBluetoothManager();
 ```
 
 #### Get KnBle context
 ```java
+@Nullable
 Context ctx = KnBle.gi().getContext();
 ```
 
