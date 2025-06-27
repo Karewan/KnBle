@@ -43,7 +43,7 @@ public class DeviceOp {
 
 	// Always use main thread with connect/disconnect to avoid issues
 	private final Handler mMainHandler = new Handler(Looper.getMainLooper());
-	private final BleDevice mDevice;
+	private BleDevice mDevice;
 
 	// Device Handler + Thread
 	private volatile HandlerThread mdThread = null;
@@ -89,6 +89,14 @@ public class DeviceOp {
 	@NonNull
 	public BleDevice getDevice() {
 		return mDevice;
+	}
+
+	/**
+	 * Update BleDevice
+	 * @param device BleDevice
+	 */
+	public synchronized void setDevice(@NonNull BleDevice device) {
+		this.mDevice = device;
 	}
 
 	/**

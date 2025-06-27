@@ -310,7 +310,12 @@ public class KnBle {
 			return;
 		}
 
-		DevicesManager.gi().connect(device, callback);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+
+		if(deviceOp == null) deviceOp = DevicesManager.gi().addDevice(device);
+		else deviceOp.setDevice(device);
+
+		deviceOp.connect(callback);
 	}
 
 	/**

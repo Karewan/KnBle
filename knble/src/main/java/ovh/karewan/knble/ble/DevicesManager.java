@@ -47,9 +47,12 @@ public class DevicesManager {
 	/**
 	 * Add a device
 	 * @param device The device
+	 * @return DeviceOp
 	 */
-	public void addDevice(@NonNull BleDevice device) {
-		mDevicesOp.put(device.getMac(), new DeviceOp(device));
+	public DeviceOp addDevice(@NonNull BleDevice device) {
+		DeviceOp deviceOp = new DeviceOp(device);
+		mDevicesOp.put(device.getMac(), deviceOp);
+		return deviceOp;
 	}
 
 	/**
