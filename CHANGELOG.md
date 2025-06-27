@@ -1,6 +1,33 @@
 KnBle Change Log
 ==========
 
+TODO
+---------------------------
+* Gatt Queue
+* Bound / Pairing
+* Get service / get chara ?
+* Possibility to interact with service and chara directly for write,read,notify... (without UUID) ?
+* Improve the write method ?
+* Better threading / synchronized managment (if needed) ?
+
+Version 3.0.0 *(TBD)*
+----------------------------
+* Added ability to listen multiple characteristics for a same device (enableNotify method)
+* Added a readPhy method
+* Added a callback for the requestMtu method (optional)
+* Added a callback for the setPreferredPhy method (optional)
+* Removed duplicate methods between KnBle and DevicesManager classes
+* When calling the connect method, the DeviceOp instance is now reused for a same mac address (if existent)
+* Bumped compile and target SDK to 36
+* Bumped JDK to 17
+* Bumped deps
+* Various changes and improvements
+* **BREAKING CHANGES**
+	* Replaced Hashmap by List for getScannedDevices method and onScanFinished callback
+	* Replaced HashMap by ConcurrentHashMap in the DevicesManager class
+	* Replaced HashMap by ConcurrentHashMap in the Scanner class
+	* The disableNotify method now require serviceUUID and characteristicUUID parameters
+
 Version 2.4.7 *(2023-06-14)*
 ----------------------------
 - Various bug fixes and improvements
