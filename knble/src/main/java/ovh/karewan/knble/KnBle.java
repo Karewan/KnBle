@@ -339,6 +339,16 @@ public class KnBle {
 	 * Request MTU
 	 * @param device The device
 	 * @param mtu The MTU
+	 */
+	public void requestMtu(@NonNull BleDevice device, int mtu) {
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.requestMtu(mtu, null);
+	}
+
+	/**
+	 * Request MTU
+	 * @param device The device
+	 * @param mtu The MTU
 	 * @param callback The callback
 	 */
 	public void requestMtu(@NonNull BleDevice device, int mtu, @NonNull BleMtuChangedCallback callback) {

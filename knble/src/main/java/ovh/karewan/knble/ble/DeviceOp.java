@@ -810,7 +810,7 @@ public class DeviceOp {
 	 * @param mtu MTU
 	 * @param callback Callback
 	 */
-	public void requestMtu(int mtu, @NonNull BleMtuChangedCallback callback) {
+	public void requestMtu(int mtu, @Nullable BleMtuChangedCallback callback) {
 		if(KnBle.DEBUG) Log.d(LOG, "requestMtu mtu=" + mtu);
 		if(!isConnected()) return;
 
