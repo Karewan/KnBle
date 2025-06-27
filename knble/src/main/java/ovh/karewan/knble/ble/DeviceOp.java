@@ -1,6 +1,5 @@
 package ovh.karewan.knble.ble;
 
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -17,6 +16,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import java.lang.reflect.Method;
 import java.util.Queue;
@@ -807,7 +807,7 @@ public class DeviceOp {
 	 * @param rxPhy RX PHY
 	 * @param phyOptions CODING FOR LE CODED PHY
 	 */
-	@TargetApi(Build.VERSION_CODES.O)
+	@RequiresApi(Build.VERSION_CODES.O)
 	public void setPreferredPhy(int txPhy, int rxPhy, int phyOptions) {
 		if(KnBle.DEBUG) Log.d(LOG, "setPreferredPhy txPhy=" + txPhy + " rxPhy=" + rxPhy + " phyOptions=" + phyOptions);
 		if(!isConnected()) return;

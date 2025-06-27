@@ -1,6 +1,5 @@
 package ovh.karewan.knble;
 
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothManager;
@@ -14,11 +13,13 @@ import android.os.Build;
 import androidx.annotation.DeprecatedSinceApi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
+import ovh.karewan.knble.ble.DeviceOp;
 import ovh.karewan.knble.ble.DevicesManager;
 import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
@@ -142,6 +143,7 @@ public class KnBle {
 	 * @param enable Enable or disable
 	 * @return boolean
 	 */
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	@DeprecatedSinceApi(api=Build.VERSION_CODES.TIRAMISU)
 	public boolean enableBluetooth(boolean enable) {
 		if(mBluetoothAdapter == null || Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return false;
@@ -152,6 +154,7 @@ public class KnBle {
 	 * Get a BleDevice object from a mac address
 	 * @param mac The mac address
 	 * @return BleDevice
+	 * @noinspection CallToPrintStackTrace
 	 */
 	@Nullable
 	public BleDevice getBleDeviceFromMac(@NonNull String mac) {
@@ -268,7 +271,8 @@ public class KnBle {
 	 * @return boolean
 	 */
 	public boolean isConnected(@NonNull BleDevice device) {
-		return DevicesManager.gi().isConnected(device);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		return deviceOp != null && deviceOp.isConnected();
 	}
 
 	/**
@@ -277,7 +281,8 @@ public class KnBle {
 	 * @return The state
 	 */
 	public int getDeviceConnState(@NonNull BleDevice device) {
-		return DevicesManager.gi().getDeviceState(device);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		return deviceOp == null ? BleGattCallback.DISCONNECTED : deviceOp.getState();
 	}
 
 	/**
@@ -287,7 +292,8 @@ public class KnBle {
 	 */
 	@Nullable
 	public BluetoothGatt getBluetoothGatt(@NonNull BleDevice device) {
-		return DevicesManager.gi().getBluetoothGatt(device);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		return deviceOp == null ? null : deviceOp.getBluetoothGatt();
 	}
 
 	/**
@@ -296,7 +302,8 @@ public class KnBle {
 	 * @return The last gatt status
 	 */
 	public int getLastGattStatusOfDevice(@NonNull BleDevice device) {
-		return DevicesManager.gi().getLastGattStatusOfDevice(device);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		return deviceOp == null ? 0 : deviceOp.getLastGattStatus();
 	}
 
 	/**
@@ -324,7 +331,8 @@ public class KnBle {
 	 * @param connectionPriority The connection priority
 	 */
 	public void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
-		DevicesManager.gi().requestConnectionPriority(device, connectionPriority);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.requestConnectionPriority(connectionPriority);
 	}
 
 	/**
@@ -333,7 +341,8 @@ public class KnBle {
 	 * @param mtu The MTU
 	 */
 	public void requestMtu(@NonNull BleDevice device, int mtu) {
-		DevicesManager.gi().requestMtu(device, mtu);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.requestMtu(mtu);
 	}
 
 	/**
@@ -343,9 +352,10 @@ public class KnBle {
 	 * @param rxPhy RX PHY
 	 * @param phyOptions CODING FOR LE CODED PHY
 	 */
-	@TargetApi(Build.VERSION_CODES.O)
+	@RequiresApi(Build.VERSION_CODES.O)
 	public void setPreferredPhy(@NonNull BleDevice device, int txPhy, int rxPhy, int phyOptions) {
-		DevicesManager.gi().setPreferredPhy(device, txPhy, rxPhy, phyOptions);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.setPreferredPhy(txPhy, rxPhy, phyOptions);
 	}
 
 	/**
@@ -354,7 +364,8 @@ public class KnBle {
 	 * @return The MTU
 	 */
 	public int getMtu(@NonNull BleDevice device) {
-		return DevicesManager.gi().getMtu(device);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		return deviceOp == null ? 0 : deviceOp.getMtu();
 	}
 
 	/**
@@ -364,7 +375,9 @@ public class KnBle {
 	 * @param callback The callback
 	 */
 	public void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
-		DevicesManager.gi().hasService(device, serviceUUID, callback);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.hasService(serviceUUID, callback);
+		else callback.onResponse(false);
 	}
 
 	/**
@@ -375,7 +388,9 @@ public class KnBle {
 	 * @param callback The callback
 	 */
 	public void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
-		DevicesManager.gi().hasCharacteristic(device, serviceUUID, characteristicUUID, callback);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.hasCharacteristic(serviceUUID, characteristicUUID, callback);
+		else callback.onResponse(false);
 	}
 
 	/**
@@ -384,7 +399,8 @@ public class KnBle {
 	 * @param callback The callback
 	 */
 	public void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
-		DevicesManager.gi().setGattCallback(device, callback);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.setGattCallback(callback);
 	}
 
 	/**
@@ -411,7 +427,7 @@ public class KnBle {
 	 * @param characteristicUUID The characteristic UUID
 	 * @param data The data
 	 * @param split Split data if data > 20 bytes
-	 * @param spliteSize Packet split size
+	 * @param splitSize Packet split size
 	 * @param sendNextWhenLastSuccess If split send next package when last sucess
 	 * @param intervalBetweenTwoPackage Interval between two package
 	 * @param callback The callback
@@ -421,12 +437,14 @@ public class KnBle {
 					  @NonNull String characteristicUUID,
 					  @NonNull byte[] data,
 					  boolean split,
-					  int spliteSize,
+					  int splitSize,
 					  boolean sendNextWhenLastSuccess,
 					  long intervalBetweenTwoPackage,
 					  @NonNull BleWriteCallback callback) {
 
-		DevicesManager.gi().write(device, serviceUUID, characteristicUUID, data, split, spliteSize, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.write(serviceUUID, characteristicUUID, data, split, splitSize, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback);
+		else callback.onWriteFailed();
 	}
 
 	/**
@@ -437,7 +455,9 @@ public class KnBle {
 	 * @param callback The call back
 	 */
 	public void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
-		DevicesManager.gi().read(device, serviceUUID, characteristicUUID, callback);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.read(serviceUUID, characteristicUUID, callback);
+		else callback.onReadFailed();
 	}
 
 	/**
@@ -448,7 +468,9 @@ public class KnBle {
 	 * @param callback The call back
 	 */
 	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleNotifyCallback callback) {
-		DevicesManager.gi().enableNotify(device, serviceUUID, characteristicUUID, callback);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.enableNotify(serviceUUID, characteristicUUID, callback);
+		else callback.onNotifyDisabled();
 	}
 
 	/**
@@ -456,7 +478,8 @@ public class KnBle {
 	 * @param device The device
 	 */
 	public void disableNotify(@NonNull BleDevice device) {
-		DevicesManager.gi().disableNotify(device);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.disableNotify();
 	}
 
 	/**
@@ -464,7 +487,8 @@ public class KnBle {
 	 * @param device The device
 	 */
 	public void disconnect(@NonNull BleDevice device) {
-		DevicesManager.gi().disconnect(device);
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.disconnect();
 	}
 
 	/**
