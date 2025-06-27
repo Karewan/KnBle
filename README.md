@@ -302,7 +302,15 @@ KnBle.gi().requestConnectionPriority(device, connectionPriority);
 #### Request MTU change
 ```java
 KnBle.gi().requestMtu(device, mtu);
-KnBle.gi().requestMtu(device, mtu, callback);
+
+// OR
+
+KnBle.gi().requestMtu(device, mtu, new BleMtuChangedCallback() {
+	@Override
+	public void onMtuChanged(int mtu) {
+
+	}
+});
 ```
 
 #### Get current MTU
@@ -310,9 +318,28 @@ KnBle.gi().requestMtu(device, mtu, callback);
 int mtu = KnBle.gi().getMtu(device);
 ```
 
-#### Set prefered PHY
+#### Set prefered PHY (Android 8+)
 ```java
 KnBle.gi().setPreferredPhy(device, txPhy, rxPhy, phyOptions);
+
+// OR
+
+KnBle.gi().setPreferredPhy(device, txPhy, rxPhy, phyOptions, new BlePhyValueCallback() {
+	@Override
+	public void onPhyValue(int txPhy, int rxPhy) {
+
+	}
+});
+```
+
+#### Read PHY (Android 13+)
+```java
+KnBle.gi().readPhy(device, new BlePhyValueCallback() {
+	@Override
+	public void onPhyValue(int txPhy, int rxPhy) {
+
+	}
+});
 ```
 
 #### Change BleGattCallback of a device

@@ -24,6 +24,7 @@ import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
 import ovh.karewan.knble.interfaces.BleMtuChangedCallback;
 import ovh.karewan.knble.interfaces.BleNotifyCallback;
+import ovh.karewan.knble.interfaces.BlePhyValueCallback;
 import ovh.karewan.knble.interfaces.BleReadCallback;
 import ovh.karewan.knble.interfaces.BleScanCallback;
 import ovh.karewan.knble.interfaces.BleWriteCallback;
@@ -341,8 +342,7 @@ public class KnBle {
 	 * @param mtu The MTU
 	 */
 	public void requestMtu(@NonNull BleDevice device, int mtu) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
-		if(deviceOp != null) deviceOp.requestMtu(mtu, null);
+		requestMtu(device, mtu, null);
 	}
 
 	/**
@@ -351,7 +351,7 @@ public class KnBle {
 	 * @param mtu The MTU
 	 * @param callback The callback
 	 */
-	public void requestMtu(@NonNull BleDevice device, int mtu, @NonNull BleMtuChangedCallback callback) {
+	public void requestMtu(@NonNull BleDevice device, int mtu, @Nullable BleMtuChangedCallback callback) {
 		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
 		if(deviceOp != null) deviceOp.requestMtu(mtu, callback);
 	}
@@ -365,8 +365,32 @@ public class KnBle {
 	 */
 	@RequiresApi(Build.VERSION_CODES.O)
 	public void setPreferredPhy(@NonNull BleDevice device, int txPhy, int rxPhy, int phyOptions) {
+		setPreferredPhy(device, txPhy, rxPhy, phyOptions, null);
+	}
+
+	/**
+	 * Set prefered PHY
+	 * @param device The device
+	 * @param txPhy TX PHY
+	 * @param rxPhy RX PHY
+	 * @param phyOptions CODING FOR LE CODED PHY
+	 * @param callback Callback
+	 */
+	@RequiresApi(Build.VERSION_CODES.O)
+	public void setPreferredPhy(@NonNull BleDevice device, int txPhy, int rxPhy, int phyOptions, @Nullable BlePhyValueCallback callback) {
 		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
-		if(deviceOp != null) deviceOp.setPreferredPhy(txPhy, rxPhy, phyOptions);
+		if(deviceOp != null) deviceOp.setPreferredPhy(txPhy, rxPhy, phyOptions, callback);
+	}
+
+	/**
+	 * Read PHY
+	 * @param device The device
+	 * @param callback Callback
+	 */
+	@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+	public void readPhy(@NonNull BleDevice device, @Nullable BlePhyValueCallback callback) {
+		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		if(deviceOp != null) deviceOp.readPhy(callback);
 	}
 
 	/**

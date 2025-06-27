@@ -27,6 +27,7 @@ import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
 import ovh.karewan.knble.interfaces.BleMtuChangedCallback;
 import ovh.karewan.knble.interfaces.BleNotifyCallback;
+import ovh.karewan.knble.interfaces.BlePhyValueCallback;
 import ovh.karewan.knble.interfaces.BleReadCallback;
 import ovh.karewan.knble.interfaces.BleWriteCallback;
 import ovh.karewan.knble.struct.BleDevice;
@@ -71,6 +72,9 @@ public class DeviceOp {
 	private volatile BluetoothGattCharacteristic mReadCharacteristic;
 
 	private volatile BleMtuChangedCallback mMtuCallback;
+
+	private volatile BlePhyValueCallback mBlePhyUpdateCallback;
+	private volatile BlePhyValueCallback mBlePhyReadCallback;
 
 	private volatile BleNotifyCallback mNotifyCallback;
 	private volatile BluetoothGattCharacteristic mNotifyCharacteristic;
@@ -205,6 +209,22 @@ public class DeviceOp {
 	 */
 	private synchronized void setMtuCallback(@Nullable BleMtuChangedCallback callback) {
 		mMtuCallback = callback;
+	}
+
+	/**
+	 * Set phy update callback
+	 * @param callback BlePhyValueCallback
+	 */
+	private synchronized void setPhyUpdateCallback(@Nullable BlePhyValueCallback callback) {
+		mBlePhyUpdateCallback = callback;
+	}
+
+	/**
+	 * Set phy read callback
+	 * @param callback BlePhyValueCallback
+	 */
+	private synchronized void setPhyReadCallback(@Nullable BlePhyValueCallback callback) {
+		mBlePhyReadCallback = callback;
 	}
 
 	/**
@@ -463,7 +483,6 @@ public class DeviceOp {
 		public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onMtuChanged mtu=" + mtu + " status=" + status);
 			super.onMtuChanged(gatt, mtu, status);
-
 			setLastGattStatus(status);
 			setMtu(mtu);
 
@@ -478,6 +497,11 @@ public class DeviceOp {
 			if(KnBle.DEBUG) Log.d(LOG, "onPhyUpdate txPhy=" + txPhy + " rxPhy=" + rxPhy + " status=" + status);
 			super.onPhyUpdate(gatt, txPhy, rxPhy, status);
 			setLastGattStatus(status);
+
+			// Run on the md thread
+			if(mdHandler != null) mdHandler.post(() -> {
+				if(mBlePhyUpdateCallback != null) mBlePhyUpdateCallback.onPhyValue(txPhy, rxPhy);
+			});
 		}
 
 		@Override
@@ -485,6 +509,11 @@ public class DeviceOp {
 			if(KnBle.DEBUG) Log.d(LOG, "onPhyRead txPhy=" + txPhy + " rxPhy=" + rxPhy + " status=" + status);
 			super.onPhyRead(gatt, txPhy, rxPhy, status);
 			setLastGattStatus(status);
+
+			// Run on the md thread
+			if(mdHandler != null) mdHandler.post(() -> {
+				if(mBlePhyReadCallback != null) mBlePhyReadCallback.onPhyValue(txPhy, rxPhy);
+			});
 		}
 	};
 
@@ -815,24 +844,44 @@ public class DeviceOp {
 		if(!isConnected()) return;
 
 		if(mdHandler != null) mdHandler.post(() -> {
+			if(mBluetoothGatt == null) return;
 			setMtuCallback(callback);
-			if(mBluetoothGatt != null)  mBluetoothGatt.requestMtu(mtu);
+			mBluetoothGatt.requestMtu(mtu);
 		});
 	}
 
 	/**
-	 *Set prefered PHY
+	 * Set prefered PHY
 	 * @param txPhy TX PHY
 	 * @param rxPhy RX PHY
 	 * @param phyOptions CODING FOR LE CODED PHY
+	 * @param callback Callback
 	 */
 	@RequiresApi(Build.VERSION_CODES.O)
-	public void setPreferredPhy(int txPhy, int rxPhy, int phyOptions) {
+	public void setPreferredPhy(int txPhy, int rxPhy, int phyOptions, @Nullable BlePhyValueCallback callback) {
 		if(KnBle.DEBUG) Log.d(LOG, "setPreferredPhy txPhy=" + txPhy + " rxPhy=" + rxPhy + " phyOptions=" + phyOptions);
 		if(!isConnected()) return;
 
 		if(mdHandler != null) mdHandler.post(() -> {
-			if(mBluetoothGatt != null)  mBluetoothGatt.setPreferredPhy(txPhy, rxPhy, phyOptions);
+			if(mBluetoothGatt == null) return;
+			setPhyUpdateCallback(callback);
+			mBluetoothGatt.setPreferredPhy(txPhy, rxPhy, phyOptions);
+		});
+	}
+
+	/**
+	 * Read PHY
+	 * @param callback Callback
+	 */
+	@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+	public void readPhy(@Nullable BlePhyValueCallback callback) {
+		if(KnBle.DEBUG) Log.d(LOG, "readPhy");
+		if(!isConnected()) return;
+
+		if(mdHandler != null) mdHandler.post(() -> {
+			if(mBluetoothGatt == null) return;
+			setPhyReadCallback(callback);
+			mBluetoothGatt.readPhy();
 		});
 	}
 
