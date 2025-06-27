@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleScanCallback;
@@ -27,7 +28,7 @@ public class Scanner {
 	private static volatile Scanner sInstance;
 
 	private final Handler mHandler = new Handler();
-	private final HashMap<String, BleDevice> mScannedDevices = new HashMap<>();
+	private final ConcurrentHashMap<String, BleDevice> mScannedDevices = new ConcurrentHashMap<>();
 
 	private boolean mIsScanning = false;
 	private int mLastError = BleScanCallback.NO_ERROR;
@@ -150,7 +151,7 @@ public class Scanner {
 	/**
 	 * Clear scanned devices
 	 */
-	public synchronized void clearScannedDevices() {
+	public void clearScannedDevices() {
 		mScannedDevices.clear();
 	}
 
@@ -159,7 +160,7 @@ public class Scanner {
 	 * @return mScannedDevices
 	 */
 	@NonNull
-	public HashMap<String, BleDevice> getScannedDevices() {
+	public ConcurrentHashMap<String, BleDevice> getScannedDevices() {
 		return mScannedDevices;
 	}
 
