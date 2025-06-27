@@ -86,7 +86,7 @@ KnBle.gi().startScan(new BleScanCallback() {
 	}
 
 	@Override
-	public void onScanFinished(@NonNull HashMap<String, BleDevice> scanResult) {
+	public void onScanFinished(@NonNull List<BleDevice> scanResult) {
 
 	}
 });
@@ -135,7 +135,7 @@ ScanFilters filters = KnBle.gi().getScanFilters();
 
 #### Get all scanned devices (string is the mac address)
 ```java
-HashMap<String, BleDevice> devices = KnBle.gi().getScannedDevices();
+List<BleDevice> devices = KnBle.gi().getScannedDevices();
 ```
 
 #### Clear scanned devices
@@ -301,7 +301,7 @@ KnBle.gi().requestConnectionPriority(device, connectionPriority);
 
 #### Request MTU change
 ```java
-KnBle.gi().requestMtu(device, mtu);
+KnBle.gi().requestMtu(device, mtu, callback);
 ```
 
 #### Get current MTU

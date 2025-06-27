@@ -17,7 +17,6 @@ import androidx.annotation.RequiresApi;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 import ovh.karewan.knble.ble.DeviceOp;
 import ovh.karewan.knble.ble.DevicesManager;
@@ -237,7 +236,7 @@ public class KnBle {
 	 * @return mScannedDevices
 	 */
 	@NonNull
-	public ConcurrentHashMap<String, BleDevice> getScannedDevices() {
+	public List<BleDevice> getScannedDevices() {
 		return Scanner.gi().getScannedDevices();
 	}
 

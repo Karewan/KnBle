@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -159,8 +160,10 @@ public class Scanner {
 	 * @return mScannedDevices
 	 */
 	@NonNull
-	public ConcurrentHashMap<String, BleDevice> getScannedDevices() {
-		return mScannedDevices;
+	public List<BleDevice> getScannedDevices() {
+		List<BleDevice> devicesList = new ArrayList<>();
+		for(Map.Entry<String, BleDevice> entry : mScannedDevices.entrySet()) devicesList.add(entry.getValue());
+		return devicesList;
 	}
 
 	/**
@@ -436,7 +439,7 @@ public class Scanner {
 		// Scanned finished
 		setIsScanning(false);
 		if(mCallback != null) {
-			mCallback.onScanFinished(mScannedDevices);
+			mCallback.onScanFinished(getScannedDevices());
 			setCallback(null);
 		}
 	}
