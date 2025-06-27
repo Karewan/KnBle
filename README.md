@@ -291,7 +291,7 @@ KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", new BleNo
 
 #### Disable characteristic notification
 ```java
-KnBle.gi().disableNotify(device);
+KnBle.gi().disableNotify(device, "service uuid", "characteristic uuid");
 ```
 
 #### Request connection priority

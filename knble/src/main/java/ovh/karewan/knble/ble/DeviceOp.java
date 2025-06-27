@@ -21,6 +21,7 @@ import androidx.annotation.RequiresApi;
 import java.lang.reflect.Method;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleCheckCallback;
@@ -35,7 +36,10 @@ import ovh.karewan.knble.utils.Utils;
 
 @SuppressWarnings("MissingPermission")
 public class DeviceOp {
-	private static final String LOG = "KnBle##DeviceOp";
+	private static final String LOG = "KnBle::DeviceOp";
+
+	// Notify descriptor UUID
+	private static final String NOTIFY_DESCRIPTOR = "00002902-0000-1000-8000-00805f9b34fb";
 
 	// Nb max of retry
 	private static final int MAX_RETRY = 80;
@@ -45,7 +49,7 @@ public class DeviceOp {
 
 	// Always use main thread with connect/disconnect to avoid issues
 	private final Handler mMainHandler = new Handler(Looper.getMainLooper());
-	private BleDevice mDevice;
+	private volatile BleDevice mDevice;
 
 	// Device Handler + Thread
 	private volatile HandlerThread mdThread = null;
@@ -76,10 +80,7 @@ public class DeviceOp {
 	private volatile BlePhyValueCallback mBlePhyUpdateCallback;
 	private volatile BlePhyValueCallback mBlePhyReadCallback;
 
-	private volatile BleNotifyCallback mNotifyCallback;
-	private volatile BluetoothGattCharacteristic mNotifyCharacteristic;
-
-	private volatile BluetoothGattDescriptor mNotifyDescriptor;
+	private final ConcurrentHashMap<String, BleNotifyCallback> mNotifyCallbacks = new ConcurrentHashMap<>();
 
 	/**
 	 * Class constructor
@@ -196,14 +197,6 @@ public class DeviceOp {
 	}
 
 	/**
-	 * Set notify callback
-	 * @param callback BleNotifyCallback
-	 */
-	private synchronized void setNotifyCallback(@Nullable BleNotifyCallback callback) {
-		mNotifyCallback = callback;
-	}
-
-	/**
 	 * Set mtu callback
 	 * @param callback BleMtuChangedCallback
 	 */
@@ -274,27 +267,11 @@ public class DeviceOp {
 	}
 
 	/**
-	 * Set notify BluetoothGattCharacteristic
-	 * @param characteristic read BluetoothGattCharacteristic
-	 */
-	private synchronized void setNotifyCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
-		mNotifyCharacteristic = characteristic;
-	}
-
-	/**
 	 * Set write BluetoothGattCharacteristic
 	 * @param characteristic write BluetoothGattCharacteristic
 	 */
 	private synchronized void setWriteCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
 		mWriteCharacteristic = characteristic;
-	}
-
-	/**
-	 * Set notify BluetoothGattCharacteristic
-	 * @param descriptor BluetoothGattDescriptor
-	 */
-	private synchronized void setNotifyDescriptor(@Nullable BluetoothGattDescriptor descriptor) {
-		mNotifyDescriptor = descriptor;
 	}
 
 	/**
@@ -424,11 +401,8 @@ public class DeviceOp {
 
 			// Run on the md thread
 			if(mdHandler != null) mdHandler.post(() -> {
-				if(mNotifyCallback == null
-						|| mNotifyCharacteristic == null
-						|| !characteristic.getUuid().equals(mNotifyCharacteristic.getUuid())) return;
-
-				mNotifyCallback.onNotify(characteristic.getValue());
+				BleNotifyCallback callback = mNotifyCallbacks.get(characteristic.getUuid().toString());
+				if(callback != null) callback.onNotify(characteristic.getValue());
 			});
 		}
 
@@ -448,26 +422,22 @@ public class DeviceOp {
 
 		@Override
 		public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-			if(KnBle.DEBUG) Log.d(LOG, "onDescriptorWrite descriptor=" + descriptor.getUuid().toString() + " status=" + status);
+			String characteristic = descriptor.getCharacteristic().getUuid().toString();
+			if(KnBle.DEBUG) Log.d(LOG, "onDescriptorWrite characteristic=" + characteristic
+					+ " descriptor=" + descriptor.getUuid().toString() + " status=" + status);
 			super.onDescriptorWrite(gatt, descriptor, status);
 			setLastGattStatus(status);
 
 			// Run on the md thread
 			if(mdHandler != null) mdHandler.post(() -> {
-				if(mNotifyCallback == null) return;
+				BleNotifyCallback callback = mNotifyCallbacks.get(characteristic);
+				if(callback == null) return;
 
 				// If success
-				if(status == BluetoothGatt.GATT_SUCCESS) {
-					if(mNotifyCharacteristic != null) mNotifyCallback.onNotifyEnabled();
-					else {
-						mNotifyCallback.onNotifyDisabled();
-						setNotifyCallback(null);
-					}
-				} else {
-					mNotifyCallback.onNotifyDisabled();
-					setNotifyCharacteristic(null);
-					setNotifyDescriptor(null);
-					setNotifyCallback(null);
+				if(status == BluetoothGatt.GATT_SUCCESS) callback.onNotifyEnabled();
+				else {
+					mNotifyCallbacks.remove(characteristic);
+					callback.onNotifyDisabled();
 				}
 			});
 		}
@@ -954,65 +924,54 @@ public class DeviceOp {
 			BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(serviceUUID));
 			if(service == null) {
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify service is null");
-
 				callback.onNotifyDisabled();
 				return;
 			}
 
 			// Get the characteristic
-			setNotifyCharacteristic(service.getCharacteristic(UUID.fromString(characteristicUUID)));
-			if(mNotifyCharacteristic == null || (mNotifyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
-
+			BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(characteristicUUID));
+			if(characteristic == null || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify characteristic is null or flag read = 0 or flag notify = 0");
-				setNotifyCharacteristic(null);
-				callback.onNotifyDisabled();
-				return;
-			}
-
-			// Get the descriptor
-			setNotifyDescriptor(mNotifyCharacteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")));
-			if(mNotifyDescriptor == null) {
-				if(KnBle.DEBUG) Log.d(LOG, "enableNotify descriptor is null");
-
-				setNotifyCharacteristic(null);
-				setNotifyDescriptor(null);
 				callback.onNotifyDisabled();
 				return;
 			}
 
 			// Enable notification
-			if(!mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, true)) {
+			if(!mBluetoothGatt.setCharacteristicNotification(characteristic, true)) {
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify failed to enable characteristic notification");
+				callback.onNotifyDisabled();
+				return;
+			}
 
-				setNotifyCharacteristic(null);
-				setNotifyDescriptor(null);
+			// Get the descriptor
+			BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(NOTIFY_DESCRIPTOR));
+			if(descriptor == null) {
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify descriptor is null");
 				callback.onNotifyDisabled();
 				return;
 			}
 
 			// Set the callback
-			setNotifyCallback(callback);
+			mNotifyCallbacks.put(characteristicUUID, callback);
 
 			// Write descriptor
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-				int success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+				int success = mBluetoothGatt.writeDescriptor(descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify writeDescriptor=" + success);
 
 				if(success != BluetoothStatusCodes.SUCCESS) {
-					setNotifyCharacteristic(null);
-					setNotifyDescriptor(null);
-					setNotifyCallback(null);
+					mNotifyCallbacks.remove(characteristicUUID);
+					mBluetoothGatt.setCharacteristicNotification(characteristic, false);
 					callback.onNotifyDisabled();
 				}
 			} else {
-				mNotifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-				boolean success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
+				descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+				boolean success = mBluetoothGatt.writeDescriptor(descriptor);
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify writeDescriptor=" + success);
 
 				if(!success) {
-					setNotifyCharacteristic(null);
-					setNotifyDescriptor(null);
-					setNotifyCallback(null);
+					mNotifyCallbacks.remove(characteristicUUID);
+					mBluetoothGatt.setCharacteristicNotification(characteristic, false);
 					callback.onNotifyDisabled();
 				}
 			}
@@ -1021,31 +980,61 @@ public class DeviceOp {
 
 	/**
 	 * Disable notify
+	 * @param serviceUUID The service UUID
+	 * @param characteristicUUID The characteristic UUID
 	 */
-	public void disableNotify() {
-		if(KnBle.DEBUG) Log.d(LOG, "disableNotify");
+	public void disableNotify(@NonNull String serviceUUID, @NonNull String characteristicUUID) {
+		if(KnBle.DEBUG) Log.d(LOG, "disableNotify serviceUUID=" + serviceUUID + " characteristicUUID=" + characteristicUUID);
 
 		// Run on the md thread
 		if(mdHandler != null) mdHandler.post(() -> {
-			if(mBluetoothGatt == null || mNotifyCharacteristic == null || mNotifyDescriptor == null) return;
+			BleNotifyCallback callback = mNotifyCallbacks.remove(characteristicUUID);
+			if(callback == null) return;
+
+			// Check if is connected
+			if(mBluetoothGatt == null) {
+				if(KnBle.DEBUG) Log.d(LOG, "disableNotify mBluetoothGatt is null");
+				callback.onNotifyDisabled();
+				return;
+			}
+
+			// Get the service
+			BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString(serviceUUID));
+			if(service == null) {
+				if(KnBle.DEBUG) Log.d(LOG, "disableNotify service is null");
+				callback.onNotifyDisabled();
+				return;
+			}
+
+			// Get the characteristic
+			BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(characteristicUUID));
+			if(characteristic == null) {
+				if(KnBle.DEBUG) Log.d(LOG, "disableNotify characteristic is null");
+				callback.onNotifyDisabled();
+				return;
+			}
 
 			// Disable notification
-			boolean stopNotif = mBluetoothGatt.setCharacteristicNotification(mNotifyCharacteristic, false);
+			boolean stopNotif = mBluetoothGatt.setCharacteristicNotification(characteristic, false);
 			if(KnBle.DEBUG) Log.d(LOG, "disableNotify setCharacteristicNotification=" + stopNotif);
+
+			// Get the descriptor
+			BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(NOTIFY_DESCRIPTOR));
+			if(descriptor == null) {
+				if(KnBle.DEBUG) Log.d(LOG, "disableNotify descriptor is null");
+				callback.onNotifyDisabled();
+				return;
+			}
 
 			// Write descriptor
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-				int success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+				int success = mBluetoothGatt.writeDescriptor(descriptor, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
 				if(KnBle.DEBUG) Log.d(LOG, "disableNotify writeDescriptor=" + success);
 			} else {
-				mNotifyDescriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
-				boolean success = mBluetoothGatt.writeDescriptor(mNotifyDescriptor);
+				descriptor.setValue(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+				boolean success = mBluetoothGatt.writeDescriptor(descriptor);
 				if(KnBle.DEBUG) Log.d(LOG, "disableNotify writeDescriptor=" + success);
 			}
-
-			// Clear
-			setNotifyCharacteristic(null);
-			setNotifyDescriptor(null);
 		});
 	}
 
@@ -1091,10 +1080,8 @@ public class DeviceOp {
 			setReadCharacteristic(null);
 			if(mReadCallback != null) mReadCallback.onReadFailed();
 			setReadCallback(null);
-			setNotifyCharacteristic(null);
 			setMtuCallback(null);
-			setNotifyDescriptor(null);
-			setNotifyCallback(null);
+			mNotifyCallbacks.clear();
 			setLastGattStatus(0);
 			setMtu(23);
 		});

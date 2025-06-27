@@ -511,10 +511,12 @@ public class KnBle {
 	/**
 	 * Disable notify
 	 * @param device The device
+	 * @param serviceUUID The service UUID
+	 * @param characteristicUUID The characteristic UUID
 	 */
-	public void disableNotify(@NonNull BleDevice device) {
+	public void disableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID) {
 		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
-		if(deviceOp != null) deviceOp.disableNotify();
+		if(deviceOp != null) deviceOp.disableNotify(serviceUUID, characteristicUUID);
 	}
 
 	/**
