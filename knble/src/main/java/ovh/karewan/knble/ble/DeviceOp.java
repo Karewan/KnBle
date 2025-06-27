@@ -25,6 +25,7 @@ import java.util.UUID;
 import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleCheckCallback;
 import ovh.karewan.knble.interfaces.BleGattCallback;
+import ovh.karewan.knble.interfaces.BleMtuChangedCallback;
 import ovh.karewan.knble.interfaces.BleNotifyCallback;
 import ovh.karewan.knble.interfaces.BleReadCallback;
 import ovh.karewan.knble.interfaces.BleWriteCallback;
@@ -68,6 +69,8 @@ public class DeviceOp {
 
 	private volatile BleReadCallback mReadCallback;
 	private volatile BluetoothGattCharacteristic mReadCharacteristic;
+
+	private volatile BleMtuChangedCallback mMtuCallback;
 
 	private volatile BleNotifyCallback mNotifyCallback;
 	private volatile BluetoothGattCharacteristic mNotifyCharacteristic;
@@ -190,10 +193,18 @@ public class DeviceOp {
 
 	/**
 	 * Set notify callback
-	 * @param callback BleReadCallback
+	 * @param callback BleNotifyCallback
 	 */
 	private synchronized void setNotifyCallback(@Nullable BleNotifyCallback callback) {
 		mNotifyCallback = callback;
+	}
+
+	/**
+	 * Set mtu callback
+	 * @param callback BleMtuChangedCallback
+	 */
+	private synchronized void setMtuCallback(@Nullable BleMtuChangedCallback callback) {
+		mMtuCallback = callback;
 	}
 
 	/**
@@ -452,8 +463,14 @@ public class DeviceOp {
 		public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
 			if(KnBle.DEBUG) Log.d(LOG, "onMtuChanged mtu=" + mtu + " status=" + status);
 			super.onMtuChanged(gatt, mtu, status);
+
 			setLastGattStatus(status);
 			setMtu(mtu);
+
+			// Run on the md thread
+			if(mdHandler != null) mdHandler.post(() -> {
+				if(mMtuCallback != null) mMtuCallback.onMtuChanged(mtu);
+			});
 		}
 
 		@Override
@@ -791,12 +808,14 @@ public class DeviceOp {
 	/**
 	 * Request MTU
 	 * @param mtu MTU
+	 * @param callback Callback
 	 */
-	public void requestMtu(int mtu) {
+	public void requestMtu(int mtu, @NonNull BleMtuChangedCallback callback) {
 		if(KnBle.DEBUG) Log.d(LOG, "requestMtu mtu=" + mtu);
 		if(!isConnected()) return;
 
 		if(mdHandler != null) mdHandler.post(() -> {
+			setMtuCallback(callback);
 			if(mBluetoothGatt != null)  mBluetoothGatt.requestMtu(mtu);
 		});
 	}
@@ -1024,6 +1043,7 @@ public class DeviceOp {
 			if(mReadCallback != null) mReadCallback.onReadFailed();
 			setReadCallback(null);
 			setNotifyCharacteristic(null);
+			setMtuCallback(null);
 			setNotifyDescriptor(null);
 			setNotifyCallback(null);
 			setLastGattStatus(0);
@@ -1033,6 +1053,7 @@ public class DeviceOp {
 
 	/**
 	 * Clear device cache
+	 * @noinspection CallToPrintStackTrace
 	 */
 	@SuppressWarnings({"JavaReflectionMemberAccess"})
 	private void clearDeviceCache() {
