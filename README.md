@@ -20,13 +20,13 @@ allprojects {
 ```groovy
 android {
 	compileOptions {
-		sourceCompatibility JavaVersion.VERSION_11
-		targetCompatibility JavaVersion.VERSION_11
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
 	}
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.4.7'
+	implementation 'com.github.Karewan:KnBle:2.5.0'
 }
 ```
 
@@ -393,7 +393,7 @@ KnBle.DEBUG = false;
 ```
 The MIT License (MIT)
 
-Copyright (c) 2019-2023 Florent VIALATTE
+Copyright (c) 2019-2025 Florent VIALATTE
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
