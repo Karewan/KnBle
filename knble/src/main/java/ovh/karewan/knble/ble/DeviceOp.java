@@ -930,8 +930,11 @@ public class DeviceOp {
 
 			// Get the characteristic
 			BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(characteristicUUID));
-			if(characteristic == null || (characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0) {
-				if(KnBle.DEBUG) Log.d(LOG, "enableNotify characteristic is null or flag read = 0 or flag notify = 0");
+			if(characteristic == null || (
+					(characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0 &&
+					(characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == 0
+			)) {
+				if(KnBle.DEBUG) Log.d(LOG, "enableNotify characteristic is null or flag notify and indicate = 0");
 				callback.onNotifyDisabled();
 				return;
 			}
