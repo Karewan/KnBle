@@ -317,7 +317,6 @@ public class DeviceOp {
 
 				// Disconnect
 				case BluetoothProfile.STATE_DISCONNECTED:
-					clearDeviceCache();
 					disconnect();
 					break;
 			}
@@ -502,18 +501,18 @@ public class DeviceOp {
 			// Check the current state
 			switch (mState) {
 				case BleGattCallback.CONNECTING:
-					Utils.log("already connecting");
+					Utils.log("already connecting => re-emit the event");
 					callback.onConnecting();
 					return;
 
 				case BleGattCallback.CONNECTED:
-
 					if(mBluetoothGatt != null) {
-						Utils.log("already connected => re-discover services");
+						Utils.log("already connected => re-emit the event");
 						callback.onConnectSuccess(mBluetoothGatt.getServices());
 						return;
 					} else {
 						Utils.log("already connected but mBluetoothGatt is null");
+						disconnect();
 					}
 					break;
 			}
@@ -1068,6 +1067,9 @@ public class DeviceOp {
 			// Set state disconnected
 			setState(BleGattCallback.DISCONNECTED);
 
+			// Clear device cache
+			clearDeviceCache();
+
 			// Use close instead disconnect to avoid weird behavior (never use disconnect before close)
 			if(mBluetoothGatt != null) {
 				mBluetoothGatt.close();
@@ -1107,6 +1109,7 @@ public class DeviceOp {
 
 		if(mdHandler != null) mdHandler.post(() -> {
 			try {
+				if(mBluetoothGatt == null) return;
 				Method refresh = mBluetoothGatt.getClass().getMethod("refresh");
 				refresh.invoke(mBluetoothGatt);
 			} catch (Exception e) {
