@@ -655,8 +655,12 @@ public class DeviceOp {
 
 			// Get the characteristic
 			setWriteCharacteristic(service.getCharacteristic(UUID.fromString(characteristicUUID)));
-			if(mWriteCharacteristic == null || (mWriteCharacteristic.getProperties() & (BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) == 0) {
-				if(KnBle.DEBUG) Log.d(LOG, "write characteristic is null or write flag = 0");
+			if (
+				mWriteCharacteristic == null ||
+				(mWriteCharacteristic.getPermissions() & BluetoothGattCharacteristic.PERMISSION_WRITE) == 0 ||
+				(mWriteCharacteristic.getProperties() & (BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) == 0
+			) {
+				if(KnBle.DEBUG) Log.d(LOG, "write characteristic is null or write permission = 0 or write flag = 0");
 				callback.onWriteFailed();
 				return;
 			}
@@ -883,8 +887,12 @@ public class DeviceOp {
 
 			// Get the characteristic
 			setReadCharacteristic(service.getCharacteristic(UUID.fromString(characteristicUUID)));
-			if(mReadCharacteristic == null || (mReadCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == 0) {
-				if(KnBle.DEBUG) Log.d(LOG, "read characteristic is null or flag read = 0");
+			if(
+				mReadCharacteristic == null ||
+				(mReadCharacteristic.getPermissions() & BluetoothGattCharacteristic.PERMISSION_READ) == 0 ||
+				(mReadCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) == 0
+			) {
+				if(KnBle.DEBUG) Log.d(LOG, "read characteristic is null or permission read = 0 or flag read = 0");
 				callback.onReadFailed();
 				setReadCharacteristic(null);
 				return;
@@ -930,10 +938,10 @@ public class DeviceOp {
 
 			// Get the characteristic
 			BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(characteristicUUID));
-			if(characteristic == null || (
-					(characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) == 0 &&
-					(characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == 0
-			)) {
+			if(
+				characteristic == null ||
+				((characteristic.getProperties() & (BluetoothGattCharacteristic.PROPERTY_NOTIFY | BluetoothGattCharacteristic.PROPERTY_INDICATE)) == 0)
+			) {
 				if(KnBle.DEBUG) Log.d(LOG, "enableNotify characteristic is null or flag notify and indicate = 0");
 				callback.onNotifyDisabled();
 				return;
