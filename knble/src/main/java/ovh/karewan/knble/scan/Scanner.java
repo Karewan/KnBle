@@ -303,7 +303,7 @@ public class Scanner {
 		}
 
 		// No filter => Add an empty filter
-		if(scanFilters.size() == 0) scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().build());
+		if(scanFilters.isEmpty()) scanFilters.add(new android.bluetooth.le.ScanFilter.Builder().build());
 
 		// Scan settings
 		android.bluetooth.le.ScanSettings.Builder scanSettingBuilder = new android.bluetooth.le.ScanSettings.Builder();
