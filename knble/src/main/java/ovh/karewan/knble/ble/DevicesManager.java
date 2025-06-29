@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import ovh.karewan.knble.struct.BleDevice;
 
-@SuppressWarnings({"ConstantConditions", "unused"})
 public class DevicesManager {
 	// Devices OP container
 	private final ConcurrentHashMap<String, DeviceOp> mDevicesOp = new ConcurrentHashMap<>();
@@ -32,16 +31,7 @@ public class DevicesManager {
 	 */
 	public void removeDevice(@NonNull BleDevice device) {
 		DeviceOp deviceOp = mDevicesOp.remove(device.getMac());
-		if(deviceOp != null) deviceOp.disconnect();
-	}
-
-	/**
-	 * Check if contain the device
-	 * @param device The device
-	 * @return boolean
-	 */
-	public boolean containDevice(@NonNull BleDevice device) {
-		return mDevicesOp.containsKey(device.getMac());
+		if (deviceOp != null) deviceOp.disconnect();
 	}
 
 	/**
@@ -52,26 +42,6 @@ public class DevicesManager {
 	@Nullable
 	public DeviceOp getDeviceOp(@NonNull BleDevice device) {
 		return mDevicesOp.get(device.getMac());
-	}
-
-	/**
-	 * Return all OP devices
-	 * @return mDevicesOp
-	 */
-	@NonNull
-	public ConcurrentHashMap<String, DeviceOp> getDevicesOpList() {
-		return mDevicesOp;
-	}
-
-	/**
-	 * Return all devices
-	 * @return Devices
-	 */
-	@NonNull
-	public List<BleDevice> getDevicesList() {
-		List<BleDevice> devicesList = new ArrayList<>();
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) devicesList.add(entry.getValue().getDevice());
-		return devicesList;
 	}
 
 	/**
@@ -97,7 +67,7 @@ public class DevicesManager {
 	/**
 	 * Destroy all devices instances
 	 */
-	public void destroy() {
+	public void destroyAll() {
 		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) entry.getValue().disconnect();
 		mDevicesOp.clear();
 	}

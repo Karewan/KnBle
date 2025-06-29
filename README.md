@@ -377,7 +377,12 @@ BluetoothGatt gatt = KnBle.gi().getBluetoothGatt(device);
 int status = KnBle.gi().getLastGattStatusOfDevice(device);
 ```
 
-#### Destroy all devices instances
+#### Destroy (and disconnect) a device instance
+```java
+KnBle.gi().destroyDevice(device);
+```
+
+#### Destroy (and disconnect) all devices instances
 ```java
 KnBle.gi().destroyAllDevices();
 ```

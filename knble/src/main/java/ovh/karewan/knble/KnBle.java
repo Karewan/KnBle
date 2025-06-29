@@ -564,10 +564,18 @@ public class KnBle {
 	}
 
 	/**
-	 * Destroy all devices instances
+	 * Destroy (and disconnect) a device instance
+	 * @param device The device
+	 */
+	public void destroyDevice(@NonNull BleDevice device) {
+		mDevicesManager.removeDevice(device);
+	}
+
+	/**
+	 * Destroy (and disconnect) all devices instances
 	 */
 	public void destroyAllDevices() {
-		mDevicesManager.destroy();
+		mDevicesManager.destroyAll();
 	}
 
 	/**
