@@ -1,7 +1,8 @@
-package ovh.karewan.knble.utils;
+package ovh.karewan.knble;
 
 import android.content.Context;
 import android.location.LocationManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -11,10 +12,24 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
 
-import ovh.karewan.knble.KnBle;
-
 @SuppressWarnings("MissingPermission")
 public class Utils {
+	/**
+	 * Log (when DEBUG == true)
+	 * @param msg String
+	 */
+	public static void log(String msg) {
+		if(!KnBle.DEBUG) return;
+
+		StackTraceElement ste = new Throwable().getStackTrace()[1];
+
+		String tag = String.format("(%s:%s)",
+				ste.getFileName(),
+				ste.getLineNumber());
+
+		Log.d("KnBle", tag + " " + msg);
+	}
+
 	/**
 	 * Check if at least one location service is enabled (For BLE scan on Android 6+)
 	 * @param context The context

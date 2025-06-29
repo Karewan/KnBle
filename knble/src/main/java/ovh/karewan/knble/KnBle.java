@@ -36,10 +36,10 @@ import ovh.karewan.knble.struct.BleDevice;
 @SuppressWarnings({"MissingPermission", "unused"})
 public class KnBle {
 	private static volatile KnBle sInstance;
+	public static volatile boolean DEBUG = false;
 	private WeakReference<Context> mContext;
 	private BluetoothManager mBluetoothManager;
 	private BluetoothAdapter mBluetoothAdapter;
-	public static volatile boolean DEBUG = false;
 
 	private KnBle() {}
 
@@ -65,18 +65,30 @@ public class KnBle {
 	 */
 	public boolean init(@NonNull Context context) {
 		// Prevent double init
-		if(mContext != null && mContext.get() != null) return true;
+		if(mContext != null && mContext.get() != null) {
+			Utils.log("already successful init");
+			return true;
+		}
 
 		// Check if device support BLE
-		if(!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) return false;
+		if(!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+			Utils.log("failed to init => missing Bluetooth LE feature");
+			return false;
+		}
 
 		// Get the bluetooth manager service
 		mBluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-		if(mBluetoothManager == null) return false;
+		if(mBluetoothManager == null) {
+			Utils.log("failed to init => no bluetooth manager");
+			return false;
+		}
 
 		// Get the bluetooth adapter
 		mBluetoothAdapter = mBluetoothManager.getAdapter();
-		if(mBluetoothAdapter == null) return false;
+		if(mBluetoothAdapter == null) {
+			Utils.log("failed to init => no bluetooth adapter");
+			return false;
+		}
 
 		// Init the scanner
 		Scanner.gi();
@@ -86,9 +98,12 @@ public class KnBle {
 
 		// Store context into weakref to avoid memory leaks
 		mContext = new WeakReference<>(context);
+
+		// Register BT state changed receiver
 		mContext.get().registerReceiver(mBtStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
 
 		// Init success
+		Utils.log("init success");
 		return true;
 	}
 
@@ -135,7 +150,11 @@ public class KnBle {
 	 */
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isBluetoothEnabled() {
-		if(mBluetoothAdapter == null) return false;
+		if(mBluetoothAdapter == null) {
+			Utils.log("bluetooth adapter is null");
+			return false;
+		}
+
 		return mBluetoothAdapter.isEnabled();
 	}
 
@@ -147,7 +166,16 @@ public class KnBle {
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	@DeprecatedSinceApi(api=Build.VERSION_CODES.TIRAMISU)
 	public boolean enableBluetooth(boolean enable) {
-		if(mBluetoothAdapter == null || Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return false;
+		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			Utils.log("enableBluetooth is deprecated since android tiramisu");
+			return false;
+		}
+
+		if(mBluetoothAdapter == null) {
+			Utils.log("bluetooth adapter is null");
+			return false;
+		}
+
 		return enable ? mBluetoothAdapter.enable() : mBluetoothAdapter.disable();
 	}
 
@@ -159,7 +187,10 @@ public class KnBle {
 	 */
 	@Nullable
 	public BleDevice getBleDeviceFromMac(@NonNull String mac) {
-		if(mBluetoothAdapter == null) return null;
+		if(mBluetoothAdapter == null) {
+			Utils.log("bluetooth adapter is null");
+			return null;
+		}
 
 		try {
 			return new BleDevice(mBluetoothAdapter.getRemoteDevice(mac));
@@ -304,7 +335,7 @@ public class KnBle {
 	 */
 	public int getLastGattStatusOfDevice(@NonNull BleDevice device) {
 		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
-		return deviceOp == null ? 0 : deviceOp.getLastGattStatus();
+		return deviceOp == null ? BluetoothGatt.GATT_SUCCESS : deviceOp.getLastGattStatus();
 	}
 
 	/**
@@ -314,6 +345,7 @@ public class KnBle {
 	 */
 	public void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
 		if(!isInit()) {
+			Utils.log("KnBle is not init");
 			callback.onConnectFailed();
 			return;
 		}

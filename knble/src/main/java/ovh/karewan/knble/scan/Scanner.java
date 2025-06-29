@@ -21,7 +21,7 @@ import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleScanCallback;
 import ovh.karewan.knble.struct.BleDevice;
 import ovh.karewan.knble.struct.ScanRecord;
-import ovh.karewan.knble.utils.Utils;
+import ovh.karewan.knble.Utils;
 
 @SuppressWarnings("MissingPermission")
 public class Scanner {
