@@ -37,6 +37,8 @@ import ovh.karewan.knble.struct.BleDevice;
 public class KnBle {
 	private static volatile KnBle sInstance;
 	public static volatile boolean DEBUG = false;
+	private final DevicesManager mDevicesManager = new DevicesManager();
+	private final Scanner mScanner = new Scanner();
 	private WeakReference<Context> mContext;
 	private BluetoothManager mBluetoothManager;
 	private BluetoothAdapter mBluetoothAdapter;
@@ -89,12 +91,6 @@ public class KnBle {
 			Utils.log("failed to init => no bluetooth adapter");
 			return false;
 		}
-
-		// Init the scanner
-		Scanner.gi();
-
-		// Init the devices manager
-		DevicesManager.gi();
 
 		// Store context into weakref to avoid memory leaks
 		mContext = new WeakReference<>(context);
@@ -205,7 +201,7 @@ public class KnBle {
 	 * @return boolean
 	 */
 	public boolean isScanning() {
-		return Scanner.gi().isScanning();
+		return mScanner.isScanning();
 	}
 
 	/**
@@ -213,7 +209,7 @@ public class KnBle {
 	 * @return int from ScanCallback
 	 */
 	public int getLastScanError() {
-		return Scanner.gi().getLastError();
+		return mScanner.getLastError();
 	}
 
 	/**
@@ -221,7 +217,7 @@ public class KnBle {
 	 * @param scanFilter ScanFilter
 	 */
 	public void setScanFilter(@NonNull ScanFilters scanFilter) {
-		Scanner.gi().setScanFilter(scanFilter);
+		mScanner.setScanFilter(scanFilter);
 	}
 
 	/**
@@ -229,7 +225,7 @@ public class KnBle {
 	 * @return ScanFilters
 	 */
 	public ScanFilters getScanFilters() {
-		return Scanner.gi().getScanFilters();
+		return mScanner.getScanFilters();
 	}
 
 	/**
@@ -237,7 +233,7 @@ public class KnBle {
 	 * @param scanSettings ScanSettings
 	 */
 	public void setScanSettings(@NonNull ScanSettings scanSettings) {
-		Scanner.gi().setScanSettings(scanSettings);
+		mScanner.setScanSettings(scanSettings);
 	}
 
 	/**
@@ -245,7 +241,7 @@ public class KnBle {
 	 * @return ScanSettings
 	 */
 	public ScanSettings getScanSettings() {
-		return Scanner.gi().getScanSettings();
+		return mScanner.getScanSettings();
 	}
 
 	/**
@@ -253,14 +249,14 @@ public class KnBle {
 	 * @param callback BleScanCallback
 	 */
 	public void startScan(@NonNull BleScanCallback callback) {
-		Scanner.gi().startScan(callback);
+		mScanner.startScan(callback);
 	}
 
 	/**
 	 * Stop devices scan
 	 */
 	public void stopScan() {
-		Scanner.gi().stopScan();
+		mScanner.stopScan();
 	}
 
 	/**
@@ -269,14 +265,14 @@ public class KnBle {
 	 */
 	@NonNull
 	public List<BleDevice> getScannedDevices() {
-		return Scanner.gi().getScannedDevices();
+		return mScanner.getScannedDevices();
 	}
 
 	/**
 	 * Clear scanned devices list
 	 */
 	public void clearScannedDevices() {
-		Scanner.gi().clearScannedDevices();
+		mScanner.clearScannedDevices();
 	}
 
 	/**
@@ -285,7 +281,7 @@ public class KnBle {
 	 * @param resetFilters Reset filters
  	 */
 	public void resetScan(boolean resetSettings, boolean resetFilters) {
-		Scanner.gi().reset(resetSettings, resetFilters);
+		mScanner.reset(resetSettings, resetFilters);
 	}
 
 	/**
@@ -294,7 +290,7 @@ public class KnBle {
 	 */
 	@NonNull
 	public List<BleDevice> getConnectedDevices() {
-		return DevicesManager.gi().getConnectedDevices();
+		return mDevicesManager.getConnectedDevices();
 	}
 
 	/**
@@ -303,7 +299,7 @@ public class KnBle {
 	 * @return boolean
 	 */
 	public boolean isConnected(@NonNull BleDevice device) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		return deviceOp != null && deviceOp.isConnected();
 	}
 
@@ -313,7 +309,7 @@ public class KnBle {
 	 * @return The state
 	 */
 	public int getDeviceConnState(@NonNull BleDevice device) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		return deviceOp == null ? BleGattCallback.DISCONNECTED : deviceOp.getState();
 	}
 
@@ -324,7 +320,7 @@ public class KnBle {
 	 */
 	@Nullable
 	public BluetoothGatt getBluetoothGatt(@NonNull BleDevice device) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		return deviceOp == null ? null : deviceOp.getBluetoothGatt();
 	}
 
@@ -334,7 +330,7 @@ public class KnBle {
 	 * @return The last gatt status
 	 */
 	public int getLastGattStatusOfDevice(@NonNull BleDevice device) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		return deviceOp == null ? BluetoothGatt.GATT_SUCCESS : deviceOp.getLastGattStatus();
 	}
 
@@ -350,9 +346,9 @@ public class KnBle {
 			return;
 		}
 
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 
-		if(deviceOp == null) deviceOp = DevicesManager.gi().addDevice(device);
+		if(deviceOp == null) deviceOp = mDevicesManager.addDevice(device);
 		else deviceOp.setDevice(device);
 
 		deviceOp.connect(callback);
@@ -364,7 +360,7 @@ public class KnBle {
 	 * @param connectionPriority The connection priority
 	 */
 	public void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.requestConnectionPriority(connectionPriority);
 	}
 
@@ -384,7 +380,7 @@ public class KnBle {
 	 * @param callback The callback
 	 */
 	public void requestMtu(@NonNull BleDevice device, int mtu, @Nullable BleMtuChangedCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.requestMtu(mtu, callback);
 	}
 
@@ -410,7 +406,7 @@ public class KnBle {
 	 */
 	@RequiresApi(Build.VERSION_CODES.O)
 	public void setPreferredPhy(@NonNull BleDevice device, int txPhy, int rxPhy, int phyOptions, @Nullable BlePhyValueCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.setPreferredPhy(txPhy, rxPhy, phyOptions, callback);
 	}
 
@@ -421,7 +417,7 @@ public class KnBle {
 	 */
 	@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 	public void readPhy(@NonNull BleDevice device, @Nullable BlePhyValueCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.readPhy(callback);
 	}
 
@@ -431,7 +427,7 @@ public class KnBle {
 	 * @return The MTU
 	 */
 	public int getMtu(@NonNull BleDevice device) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		return deviceOp == null ? 0 : deviceOp.getMtu();
 	}
 
@@ -442,7 +438,7 @@ public class KnBle {
 	 * @param callback The callback
 	 */
 	public void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.hasService(serviceUUID, callback);
 		else callback.onResponse(false);
 	}
@@ -455,7 +451,7 @@ public class KnBle {
 	 * @param callback The callback
 	 */
 	public void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.hasCharacteristic(serviceUUID, characteristicUUID, callback);
 		else callback.onResponse(false);
 	}
@@ -466,7 +462,7 @@ public class KnBle {
 	 * @param callback The callback
 	 */
 	public void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.setGattCallback(callback);
 	}
 
@@ -509,7 +505,7 @@ public class KnBle {
 					  long intervalBetweenTwoPackage,
 					  @NonNull BleWriteCallback callback) {
 
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.write(serviceUUID, characteristicUUID, data, split, splitSize, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback);
 		else callback.onWriteFailed();
 	}
@@ -522,7 +518,7 @@ public class KnBle {
 	 * @param callback The call back
 	 */
 	public void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.read(serviceUUID, characteristicUUID, callback);
 		else callback.onReadFailed();
 	}
@@ -535,7 +531,7 @@ public class KnBle {
 	 * @param callback The call back
 	 */
 	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleNotifyCallback callback) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.enableNotify(serviceUUID, characteristicUUID, callback);
 		else callback.onNotifyDisabled();
 	}
@@ -547,7 +543,7 @@ public class KnBle {
 	 * @param characteristicUUID The characteristic UUID
 	 */
 	public void disableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.disableNotify(serviceUUID, characteristicUUID);
 	}
 
@@ -556,7 +552,7 @@ public class KnBle {
 	 * @param device The device
 	 */
 	public void disconnect(@NonNull BleDevice device) {
-		DeviceOp deviceOp = DevicesManager.gi().getDeviceOp(device);
+		DeviceOp deviceOp = mDevicesManager.getDeviceOp(device);
 		if(deviceOp != null) deviceOp.disconnect();
 	}
 
@@ -564,14 +560,14 @@ public class KnBle {
 	 * Disconnect all devices
 	 */
 	public void disconnectAll() {
-		DevicesManager.gi().disconnectAll();
+		mDevicesManager.disconnectAll();
 	}
 
 	/**
 	 * Destroy all devices instances
 	 */
 	public void destroyAllDevices() {
-		DevicesManager.gi().destroy();
+		mDevicesManager.destroy();
 	}
 
 	/**
@@ -583,8 +579,8 @@ public class KnBle {
 			if((intent == null || intent.getAction() == null || !intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED) || mBluetoothAdapter == null)
 					|| (mBluetoothAdapter.getState() != BluetoothAdapter.STATE_TURNING_OFF && mBluetoothAdapter.getState() != BluetoothAdapter.STATE_OFF)) return;
 
-			Scanner.gi().handleBtTurningOff();
-			DevicesManager.gi().disconnectAll();
+			mScanner.handleBtTurningOff();
+			mDevicesManager.disconnectAll();
 		}
 	};
 }

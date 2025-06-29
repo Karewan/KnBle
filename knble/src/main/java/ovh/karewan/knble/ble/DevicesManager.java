@@ -12,27 +12,8 @@ import ovh.karewan.knble.struct.BleDevice;
 
 @SuppressWarnings({"ConstantConditions", "unused"})
 public class DevicesManager {
-	private static volatile DevicesManager sInstance;
-
 	// Devices OP container
 	private final ConcurrentHashMap<String, DeviceOp> mDevicesOp = new ConcurrentHashMap<>();
-
-	private DevicesManager() {}
-
-	/**
-	 * Get instance
-	 * @return DevicesManager
-	 */
-	@NonNull
-	public static DevicesManager gi() {
-		if(sInstance == null) {
-			synchronized(DevicesManager.class) {
-				if(sInstance == null) sInstance = new DevicesManager();
-			}
-		}
-
-		return sInstance;
-	}
 
 	/**
 	 * Add a device

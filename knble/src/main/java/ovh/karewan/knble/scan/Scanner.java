@@ -25,8 +25,6 @@ import ovh.karewan.knble.Utils;
 
 @SuppressWarnings("MissingPermission")
 public class Scanner {
-	private static volatile Scanner sInstance;
-
 	private final Handler mHandler = new Handler();
 	private final ConcurrentHashMap<String, BleDevice> mScannedDevices = new ConcurrentHashMap<>();
 
@@ -40,23 +38,6 @@ public class Scanner {
 
 	private ScanCallback mScanCallback; // Android 6+
 	private BluetoothLeScanner mBluetoothLeScanner; // Android 6+
-
-	private Scanner() {}
-
-	/**
-	 * Get instance
-	 * @return Scanner
-	 */
-	@NonNull
-	public static Scanner gi() {
-		if(sInstance == null) {
-			synchronized(Scanner.class) {
-				if(sInstance == null) sInstance = new Scanner();
-			}
-		}
-
-		return sInstance;
-	}
 
 	/**
 	 * Set the scan filters
