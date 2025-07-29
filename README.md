@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.4.7'
+	implementation 'com.github.Karewan:KnBle:2.5.0'
 }
 ```
 
@@ -86,7 +86,7 @@ KnBle.gi().startScan(new BleScanCallback() {
 	}
 
 	@Override
-	public void onScanFinished(@NonNull HashMap<String, BleDevice> scanResult) {
+	public void onScanFinished(@NonNull List<BleDevice> scanResult) {
 
 	}
 });
@@ -133,9 +133,9 @@ ScanSettings settings = KnBle.gi().getScanSettings();
 ScanFilters filters = KnBle.gi().getScanFilters();
 ```
 
-#### Get all scanned devices (string is the mac address)
+#### Get all scanned devices
 ```java
-HashMap<String, BleDevice> devices = KnBle.gi().getScannedDevices();
+List<BleDevice> devices = KnBle.gi().getScannedDevices();
 ```
 
 #### Clear scanned devices
@@ -393,7 +393,7 @@ KnBle.DEBUG = false;
 ```
 The MIT License (MIT)
 
-Copyright (c) 2019-2023 Florent VIALATTE
+Copyright (c) 2019-2025 Florent VIALATTE
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

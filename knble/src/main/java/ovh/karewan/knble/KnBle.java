@@ -233,7 +233,7 @@ public class KnBle {
 	 * @return mScannedDevices
 	 */
 	@NonNull
-	public HashMap<String, BleDevice> getScannedDevices() {
+	public List<BleDevice> getScannedDevices() {
 		return Scanner.gi().getScannedDevices();
 	}
 

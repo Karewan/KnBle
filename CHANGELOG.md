@@ -1,6 +1,16 @@
 KnBle Change Log
 ==========
 
+Version 2.5.0 *(2025-07-29)*
+----------------------------
+- **Maintenance release before v3...**
+- Improved Scanner performance (by using temp variable and HandlerThread)
+- **Breaking Changes**
+	- Replaced HashMap by ConcurrentHashMap in the Scanner class
+	- onScanFinished now return a List instead of HashMap
+	- getScannedDevices now return a List instead of HashMap
+- Bump deps
+
 Version 2.4.7 *(2023-06-14)*
 ----------------------------
 - Various bug fixes and improvements

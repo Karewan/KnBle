@@ -3,6 +3,7 @@ package ovh.karewan.knble.interfaces;
 import androidx.annotation.NonNull;
 
 import java.util.HashMap;
+import java.util.List;
 
 import ovh.karewan.knble.struct.BleDevice;
 
@@ -41,5 +42,5 @@ public interface BleScanCallback {
 	 * onScanFinished
 	 * @param scanResult List with all discovered devices
 	 */
-	void onScanFinished(@NonNull HashMap<String, BleDevice> scanResult);
+	void onScanFinished(@NonNull List<BleDevice> scanResult);
 }
