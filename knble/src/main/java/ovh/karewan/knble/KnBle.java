@@ -249,6 +249,12 @@ public class KnBle {
 	 * @param callback BleScanCallback
 	 */
 	public void startScan(@NonNull BleScanCallback callback) {
+		if(!isInit()) {
+			Utils.log("KnBle is not init");
+			callback.onScanFailed(BleScanCallback.UNKNOWN_ERROR);
+			return;
+		}
+
 		mScanner.startScan(callback);
 	}
 
