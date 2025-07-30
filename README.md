@@ -133,7 +133,7 @@ ScanSettings settings = KnBle.gi().getScanSettings();
 ScanFilters filters = KnBle.gi().getScanFilters();
 ```
 
-#### Get all scanned devices (string is the mac address)
+#### Get all scanned devices
 ```java
 List<BleDevice> devices = KnBle.gi().getScannedDevices();
 ```
