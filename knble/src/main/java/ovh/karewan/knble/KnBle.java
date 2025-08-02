@@ -348,7 +348,7 @@ public class KnBle {
 	public void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
 		if(!isInit()) {
 			Utils.log("KnBle is not init");
-			callback.onConnectFailed();
+			callback.onDisconnected(true);
 			return;
 		}
 

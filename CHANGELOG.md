@@ -33,6 +33,7 @@ Version 3.0.0 *(TBD)*
 	* Replaced Hashmap by List for getScannedDevices method and onScanFinished callback
 	* Replaced HashMap by ConcurrentHashMap in the DevicesManager class
 	* Replaced HashMap by ConcurrentHashMap in the Scanner class
+	* Removed onConnectFailed method in the BleGattCallback, replaced by a parameter in the onDisconnected method
 
 Version 2.5.0 *(2025-07-29)*
 ----------------------------

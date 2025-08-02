@@ -174,17 +174,12 @@ KnBle.gi().connect(device, new BleGattCallback() {
 	}
 
 	@Override
-	public void onConnectFailed() {
+	public void onConnectSuccess(@NonNull List<BluetoothGattService> services) {
 
 	}
 
 	@Override
-	public void onConnectSuccess(List<BluetoothGattService> services) {
-
-	}
-
-	@Override
-	public void onDisconnected() {
+	public void onDisconnected(boolean connectFailed) {
 
 	}
 });
@@ -258,7 +253,7 @@ KnBle.gi().write(device, "service uuid", "characteristic uuid", data, true, 20, 
 ```java
 KnBle.gi().read(device, "service uuid", "characteristic uuid", new BleReadCallback() {
 	@Override
-	public void onReadSuccess(byte[] data) {
+	public void onReadSuccess(@NonNull byte[] data) {
 
 	}
 
@@ -283,7 +278,7 @@ KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", new BleNo
 	}
 
 	@Override
-	public void onNotify(byte[] data) {
+	public void onNotify(@NonNull byte[] data) {
 
 	}
 });

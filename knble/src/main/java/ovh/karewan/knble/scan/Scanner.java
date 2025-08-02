@@ -44,7 +44,7 @@ public class Scanner {
 	 * Class constructor
 	 */
 	public Scanner() {
-		HandlerThread hd = new HandlerThread("KnBleScanner");
+		HandlerThread hd = new HandlerThread("KnBleScan");
 		hd.start();
 		mHandler =  new Handler(hd.getLooper());
 	}

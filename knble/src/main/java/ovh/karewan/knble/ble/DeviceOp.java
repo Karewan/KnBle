@@ -517,6 +517,10 @@ public class DeviceOp {
 					break;
 			}
 
+			// Set state connecting
+			setState(BleGattCallback.CONNECTING);
+			callback.onConnecting();
+
 			// Delay before connect
 			int delayBeforeConnect = 0;
 
@@ -525,18 +529,13 @@ public class DeviceOp {
 				Utils.log("bluetooth is disabled");
 
 				if(!KnBle.gi().enableBluetooth(true)) {
-					// Connected failed
-					callback.onConnectFailed();
+					// Connect failed => Disconnect
 					disconnect();
 				} else {
 					// Add delay to be sure the adapter has time to init before connect
 					delayBeforeConnect += 5000;
 				}
 			}
-
-			// Set state connecting
-			setState(BleGattCallback.CONNECTING);
-			callback.onConnecting();
 
 			// Connecting after the delay
 			mMainHandler.postDelayed(() -> {
@@ -550,7 +549,7 @@ public class DeviceOp {
 
 				// All method have failed
 				if(mBluetoothGatt == null) {
-					callback.onConnectFailed();
+					// Connect failed => Disconnect
 					disconnect();
 				} else {
 					// Clear device cache
@@ -1062,10 +1061,7 @@ public class DeviceOp {
 		// Run on the main thread
 		mMainHandler.post(() -> {
 			// Connect failed
-			if(mState == BleGattCallback.CONNECTING && mCallback != null) mCallback.onConnectFailed();
-
-			// Set state disconnected
-			setState(BleGattCallback.DISCONNECTED);
+			boolean connectFailed = (mState == BleGattCallback.CONNECTING);
 
 			// Clear device cache
 			clearDeviceCache();
@@ -1074,12 +1070,6 @@ public class DeviceOp {
 			if(mBluetoothGatt != null) {
 				mBluetoothGatt.close();
 				setBluetoothGatt(null);
-			}
-
-			// Callback
-			if(mCallback != null) {
-				mCallback.onDisconnected();
-				setGattCallback(null);
 			}
 
 			// Clean
@@ -1096,6 +1086,13 @@ public class DeviceOp {
 			mNotifyCallbacks.clear();
 			setLastGattStatus(0);
 			setMtu(23);
+			setState(BleGattCallback.DISCONNECTED);
+
+			// Callback
+			if(mCallback != null) {
+				mCallback.onDisconnected(connectFailed);
+				setGattCallback(null);
+			}
 		});
 	}
 
