@@ -7,14 +7,7 @@ public interface BleWriteCallback {
 	void onWriteFailed();
 
 	/**
-	 * On write progress
-	 * @param current Current packet
-	 * @param total Total packets
-	 */
-	void onWriteProgress(int current, int total);
-
-	/**
-	 * On write success (All packets writed)
+	 * On write success
 	 */
 	void onWriteSuccess();
 }

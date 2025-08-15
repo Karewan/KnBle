@@ -3,24 +3,22 @@ KnBle Change Log
 
 TODO
 ---------------------------
-* Gatt Queue
 * Bound / Pairing
-* Get service / get chara ?
-* Possibility to interact with service and chara directly for write,read,notify... (without UUID) ?
-* Improve the write method ?
-* Better threading / synchronized managment (if needed) ?
 
 Version 3.0.0 *(TBD)*
 ----------------------------
+* Gatt Queue (to never execute two operations per device at the same time)
 * Added ability to listen multiple characteristics for a same device (enableNotify method)
 * Added ability to enableNotify on characteristic with the indicate flag
+* Added read and write descriptor methods
 * Added a readPhy method
 * Added a callback for the requestMtu method (optional)
 * Added a callback for the setPreferredPhy method (optional)
-* Added a destroyDevice method
+* Added a destroyDevice method (that disconnect and destroy the associated thread)
+* Added a getDescriptor method
+* Added more possibility to interact with device for operations like write, read, notify... by using UUID or service, characteristic, descriptor directly... (in addition to the existing “string UUID” method)
 * Removed duplicate methods between KnBle and DevicesManager classes
 * When calling the connect method, the DeviceOp instance is now reused for a same mac address (if existent)
-* The characteristic permissions are now checked before read or write
 * Scanner and DevicesManager classes are no longer Singleton
 * Improved Scanner performance (by using temp variables and HandlerThread)
 * Improved debug logs
@@ -29,11 +27,16 @@ Version 3.0.0 *(TBD)*
 * Bumped deps
 * Various changes and improvements
 * **BREAKING CHANGES (from v2.4.7)**
+	* Bumped min SDK to 24
 	* The disableNotify method now require serviceUUID and characteristicUUID parameters
+	* Replaced hasService method by a getService method
+	* Replaced hasCharacteristic method by a getCharacteristic method
 	* Replaced Hashmap by List for getScannedDevices method and onScanFinished callback
 	* Replaced HashMap by ConcurrentHashMap in the DevicesManager class
 	* Replaced HashMap by ConcurrentHashMap in the Scanner class
 	* Removed onConnectFailed method in the BleGattCallback, replaced by a parameter in the onDisconnected method
+	* Removed getLastGattStatusOfDevice method
+	* Added a dedicated method to seperate splitted writes and "standard" writes
 
 Version 2.5.0 *(2025-07-29)*
 ----------------------------

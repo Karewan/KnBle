@@ -5,24 +5,21 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ovh.karewan.knble.struct.BleDevice;
 
 public class DevicesManager {
-	// Devices OP container
-	private final ConcurrentHashMap<String, DeviceOp> mDevicesOp = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Long, DeviceOperation> mDevicesOp = new ConcurrentHashMap<>();
 
 	/**
 	 * Add a device
 	 * @param device The device
-	 * @return DeviceOp
+	 * @return DeviceOperation
 	 */
-	public DeviceOp addDevice(@NonNull BleDevice device) {
-		DeviceOp deviceOp = new DeviceOp(device);
-		mDevicesOp.put(device.getMac(), deviceOp);
-		return deviceOp;
+	@NonNull
+	public DeviceOperation addDevice(@NonNull BleDevice device) {
+		return mDevicesOp.computeIfAbsent(device.getMacLong(), ml -> new DeviceOperation(device));
 	}
 
 	/**
@@ -30,18 +27,18 @@ public class DevicesManager {
 	 * @param device The device
 	 */
 	public void removeDevice(@NonNull BleDevice device) {
-		DeviceOp deviceOp = mDevicesOp.remove(device.getMac());
+		DeviceOperation deviceOp = mDevicesOp.remove(device.getMacLong());
 		if (deviceOp != null) deviceOp.disconnect();
 	}
 
 	/**
 	 * Get a device OP
 	 * @param device The device
-	 * @return BleDeviceOp
+	 * @return DeviceOperation
 	 */
 	@Nullable
-	public DeviceOp getDeviceOp(@NonNull BleDevice device) {
-		return mDevicesOp.get(device.getMac());
+	public DeviceOperation getDeviceOp(@NonNull BleDevice device) {
+		return mDevicesOp.get(device.getMacLong());
 	}
 
 	/**
@@ -51,9 +48,11 @@ public class DevicesManager {
 	@NonNull
 	public List<BleDevice> getConnectedDevices() {
 		List<BleDevice> connectedDevices = new ArrayList<>();
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) {
-			if(entry.getValue().isConnected()) connectedDevices.add(entry.getValue().getDevice());
+
+		for (DeviceOperation deviceOp : mDevicesOp.values()) {
+			if(deviceOp.isConnected()) connectedDevices.add(deviceOp.getDevice());
 		}
+
 		return connectedDevices;
 	}
 
@@ -61,14 +60,14 @@ public class DevicesManager {
 	 * Disconnect all devices
 	 */
 	public void disconnectAll() {
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) entry.getValue().disconnect();
+		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.disconnect();
 	}
 
 	/**
 	 * Destroy all devices instances
 	 */
 	public void destroyAll() {
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) entry.getValue().disconnect();
+		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.destroy();
 		mDevicesOp.clear();
 	}
 }
