@@ -5,7 +5,7 @@ TODO
 ---------------------------
 * Bound / Pairing
 
-Version 3.0.0 *(TBD)*
+Version 3.0.0 *(2025-08-16)*
 ----------------------------
 * Gatt Queue (to never execute two operations per device at the same time)
 * Added ability to listen multiple characteristics for a same device (enableNotify method)
