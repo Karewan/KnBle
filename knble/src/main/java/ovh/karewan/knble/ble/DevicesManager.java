@@ -1,54 +1,25 @@
 package ovh.karewan.knble.ble;
 
-import android.annotation.TargetApi;
-import android.bluetooth.BluetoothGatt;
-import android.os.Build;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import ovh.karewan.knble.interfaces.BleCheckCallback;
-import ovh.karewan.knble.interfaces.BleGattCallback;
-import ovh.karewan.knble.interfaces.BleNotifyCallback;
-import ovh.karewan.knble.interfaces.BleReadCallback;
-import ovh.karewan.knble.interfaces.BleWriteCallback;
 import ovh.karewan.knble.struct.BleDevice;
 
-@SuppressWarnings({"ConstantConditions", "unused"})
 public class DevicesManager {
-	private static volatile DevicesManager sInstance;
-
-	// Devices OP container
-	private final HashMap<String, DeviceOp> mDevicesOp = new HashMap<>();
-
-	private DevicesManager() {}
-
-	/**
-	 * Get instance
-	 * @return DevicesManager
-	 */
-	@NonNull
-	public static DevicesManager gi() {
-		if(sInstance == null) {
-			synchronized(DevicesManager.class) {
-				if(sInstance == null) sInstance = new DevicesManager();
-			}
-		}
-
-		return sInstance;
-	}
+	private final ConcurrentHashMap<Long, DeviceOperation> mDevicesOp = new ConcurrentHashMap<>();
 
 	/**
 	 * Add a device
 	 * @param device The device
+	 * @return DeviceOperation
 	 */
-	public void addDevice(@NonNull BleDevice device) {
-		mDevicesOp.put(device.getMac(), new DeviceOp(device));
+	@NonNull
+	public DeviceOperation addDevice(@NonNull BleDevice device) {
+		return mDevicesOp.computeIfAbsent(device.getMacLong(), ml -> new DeviceOperation(device));
 	}
 
 	/**
@@ -56,69 +27,18 @@ public class DevicesManager {
 	 * @param device The device
 	 */
 	public void removeDevice(@NonNull BleDevice device) {
-		if(containDevice(device)) {
-			getDeviceOp(device).disconnect();
-			mDevicesOp.remove(device.getMac());
-		}
-	}
-
-	/**
-	 * Check if contain the device
-	 * @param device The device
-	 * @return boolean
-	 */
-	public boolean containDevice(@NonNull BleDevice device) {
-		return mDevicesOp.containsKey(device.getMac());
+		DeviceOperation deviceOp = mDevicesOp.remove(device.getMacLong());
+		if (deviceOp != null) deviceOp.disconnect();
 	}
 
 	/**
 	 * Get a device OP
 	 * @param device The device
-	 * @return BleDeviceOp
+	 * @return DeviceOperation
 	 */
 	@Nullable
-	public DeviceOp getDeviceOp(@NonNull BleDevice device) {
-		return mDevicesOp.get(device.getMac());
-	}
-
-	/**
-	 * Return all OP devices
-	 * @return mDevicesOp
-	 */
-	@NonNull
-	public HashMap<String, DeviceOp> getDevicesOpList() {
-		return mDevicesOp;
-	}
-
-	/**
-	 * Return all devices
-	 * @return Devices
-	 */
-	@NonNull
-	public List<BleDevice> getDevicesList() {
-		List<BleDevice> devicesList = new ArrayList<>();
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) devicesList.add(entry.getValue().getDevice());
-		return devicesList;
-	}
-
-	/**
-	 * Check if a device is connected
-	 * @param device The device
-	 * @return boolean
-	 */
-	public boolean isConnected(@NonNull BleDevice device) {
-		if(!containDevice(device)) return false;
-		return getDeviceOp(device).isConnected();
-	}
-
-	/**
-	 * Get the current device state
-	 * @param device The device
-	 * @return The state
-	 */
-	public int getDeviceState(@NonNull BleDevice device) {
-		if(!containDevice(device)) return BleGattCallback.DISCONNECTED;
-		return getDeviceOp(device).getState();
+	public DeviceOperation getDeviceOp(@NonNull BleDevice device) {
+		return mDevicesOp.get(device.getMacLong());
 	}
 
 	/**
@@ -128,209 +48,26 @@ public class DevicesManager {
 	@NonNull
 	public List<BleDevice> getConnectedDevices() {
 		List<BleDevice> connectedDevices = new ArrayList<>();
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) {
-			if(entry.getValue().isConnected()) connectedDevices.add(entry.getValue().getDevice());
+
+		for (DeviceOperation deviceOp : mDevicesOp.values()) {
+			if(deviceOp.isConnected()) connectedDevices.add(deviceOp.getDevice());
 		}
+
 		return connectedDevices;
-	}
-
-	/**
-	 * Get the BluetoothGatt of a device
-	 * @param device The device
-	 * @return BluetoothGatt|null
-	 */
-	@Nullable
-	public BluetoothGatt getBluetoothGatt(@NonNull BleDevice device) {
-		if(!containDevice(device)) return null;
-		return getDeviceOp(device).getBluetoothGatt();
-	}
-
-	/**
-	 * Get the last gatt status of a device
-	 * @param device The device
-	 * @return The last gatt status
-	 */
-	public int getLastGattStatusOfDevice(@NonNull BleDevice device) {
-		if(!containDevice(device)) return 0;
-		return getDeviceOp(device).getLastGattStatus();
-	}
-
-	/**
-	 * Request connection priority
-	 * @param device The device
-	 * @param connectionPriority The connection priority
-	 */
-	public void requestConnectionPriority(@NonNull BleDevice device, int connectionPriority) {
-		if(!containDevice(device)) return;
-		getDeviceOp(device).requestConnectionPriority(connectionPriority);
-	}
-
-	/**
-	 * Request MTU
-	 * @param device The device
-	 * @param mtu The MTU
-	 */
-	public void requestMtu(@NonNull BleDevice device, int mtu) {
-		if(!containDevice(device)) return;
-		getDeviceOp(device).requestMtu(mtu);
-	}
-
-	/**
-	 * Set prefered PHY
-	 * @param device The device
-	 * @param txPhy TX PHY
-	 * @param rxPhy RX PHY
-	 * @param phyOptions CODING FOR LE CODED PHY
-	 */
-	@TargetApi(Build.VERSION_CODES.O)
-	public void setPreferredPhy(@NonNull BleDevice device, int txPhy, int rxPhy, int phyOptions) {
-		if(!containDevice(device)) return;
-		getDeviceOp(device).setPreferredPhy(txPhy, rxPhy, phyOptions);
-	}
-
-	/**
-	 * Return MTU of a device
-	 * @param device The device
-	 * @return The MTU
-	 */
-	public int getMtu(@NonNull BleDevice device) {
-		if(!containDevice(device)) return 0;
-		return getDeviceOp(device).getMtu();
-	}
-
-	/**
-	 * Connect to a device
-	 * @param device The device
-	 * @param callback The callback
-	 */
-	public void connect(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
-		addDevice(device);
-		getDeviceOp(device).connect(callback);
-	}
-
-	/**
-	 * Change BleGattCallback of a device
-	 * @param device The device
-	 * @param callback The callback
-	 */
-	public void setGattCallback(@NonNull BleDevice device, @NonNull BleGattCallback callback) {
-		if(!containDevice(device)) return;
-		getDeviceOp(device).setGattCallback(callback);
-	}
-
-	/**
-	 * Check if a service exist
-	 * @param device The device
-	 * @param serviceUUID The service UUID
-	 * @param callback The callback
-	 */
-	public void hasService(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull BleCheckCallback callback) {
-		if(!containDevice(device)) return;
-		getDeviceOp(device).hasService(serviceUUID, callback);
-	}
-
-	/**
-	 * Check if a characteristic exist
-	 * @param device The device
-	 * @param serviceUUID The service UUID
-	 * @param characteristicUUID The characteristic UUID
-	 * @param callback The callback
-	 */
-	public void hasCharacteristic(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleCheckCallback callback) {
-		if(!containDevice(device)) return;
-		getDeviceOp(device).hasCharacteristic(serviceUUID, characteristicUUID, callback);
-	}
-
-	/**
-	 * Write data into a gatt characteristic
-	 * @param device The device
-	 * @param serviceUUID The service UUID
-	 * @param characteristicUUID The characteristic UUID
-	 * @param data The data
-	 * @param split Split data if data > 20 bytes
-	 * @param spliSize packet split size
-	 * @param sendNextWhenLastSuccess If split send next package when last sucess
-	 * @param intervalBetweenTwoPackage Interval between two package
-	 * @param callback The callback
-	 */
-	public void write(@NonNull BleDevice device,
-					  @NonNull String serviceUUID,
-					  @NonNull String characteristicUUID,
-					  @NonNull byte[] data,
-					  boolean split,
-					  int spliSize,
-					  boolean sendNextWhenLastSuccess,
-					  long intervalBetweenTwoPackage,
-					  @NonNull BleWriteCallback callback) {
-
-		if(!containDevice(device)) {
-			callback.onWriteFailed();
-			return;
-		}
-
-		getDeviceOp(device).write(serviceUUID, characteristicUUID, data, split, spliSize, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback);
-	}
-
-	/**
-	 * Read data from a gatt characteristic
-	 * @param device The device
-	 * @param serviceUUID The service UUID
-	 * @param characteristicUUID The characteristic UUID
-	 * @param callback The call back
-	 */
-	public void read(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleReadCallback callback) {
-		if(!containDevice(device)) {
-			callback.onReadFailed();
-			return;
-		}
-
-		getDeviceOp(device).read(serviceUUID, characteristicUUID, callback);
-	}
-
-	/**
-	 * Enable notify
-	 * @param device The device
-	 * @param serviceUUID The service UUID
-	 * @param characteristicUUID The characteristic UUID
-	 * @param callback The call back
-	 */
-	public void enableNotify(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull BleNotifyCallback callback) {
-		if(!containDevice(device)) {
-			callback.onNotifyDisabled();
-			return;
-		}
-
-		getDeviceOp(device).enableNotify(serviceUUID, characteristicUUID, callback);
-	}
-
-	/**
-	 * Disable notify
-	 * @param device The device
-	 */
-	public void disableNotify(@NonNull BleDevice device) {
-		if(containDevice(device)) getDeviceOp(device).disableNotify();
-	}
-
-	/**
-	 * Disconnect a device
-	 * @param device The device
-	 */
-	public void disconnect(@NonNull BleDevice device) {
-		if(containDevice(device)) getDeviceOp(device).disconnect();
 	}
 
 	/**
 	 * Disconnect all devices
 	 */
 	public void disconnectAll() {
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) entry.getValue().disconnect();
+		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.disconnect();
 	}
 
 	/**
 	 * Destroy all devices instances
 	 */
-	public void destroy() {
-		for(Map.Entry<String, DeviceOp> entry : mDevicesOp.entrySet()) entry.getValue().disconnect();
+	public void destroyAll() {
+		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.destroy();
 		mDevicesOp.clear();
 	}
 }

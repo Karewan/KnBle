@@ -2,6 +2,8 @@ package ovh.karewan.knble.interfaces;
 
 import android.bluetooth.BluetoothGattService;
 
+import androidx.annotation.NonNull;
+
 import java.util.List;
 
 public interface BleGattCallback {
@@ -18,17 +20,14 @@ public interface BleGattCallback {
 	void onConnecting();
 
 	/**
-	 * onConnectFailed
-	 */
-	void onConnectFailed();
-
-	/**
 	 * onConnectSuccess
 	 */
-	void onConnectSuccess(List<BluetoothGattService> services);
+	void onConnectSuccess(@NonNull List<BluetoothGattService> services);
+
 
 	/**
 	 * onDisconnected
+	 * @param connectFailed connection failed
 	 */
-	void onDisconnected();
+	void onDisconnected(boolean connectFailed);
 }

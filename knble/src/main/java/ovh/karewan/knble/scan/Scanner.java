@@ -22,12 +22,10 @@ import ovh.karewan.knble.KnBle;
 import ovh.karewan.knble.interfaces.BleScanCallback;
 import ovh.karewan.knble.struct.BleDevice;
 import ovh.karewan.knble.struct.ScanRecord;
-import ovh.karewan.knble.utils.Utils;
+import ovh.karewan.knble.Utils;
 
 @SuppressWarnings("MissingPermission")
 public class Scanner {
-	private static volatile Scanner sInstance;
-
 	private final Handler mHandler;
 	private final ConcurrentHashMap<String, BleDevice> mScannedDevices = new ConcurrentHashMap<>();
 
@@ -42,25 +40,13 @@ public class Scanner {
 	private ScanCallback mScanCallback; // Android 6+
 	private BluetoothLeScanner mBluetoothLeScanner; // Android 6+
 
-	private Scanner() {
-		HandlerThread hd = new HandlerThread("KnBleScanner");
+	/**
+	 * Class constructor
+	 */
+	public Scanner() {
+		HandlerThread hd = new HandlerThread("KnBleScan");
 		hd.start();
 		mHandler =  new Handler(hd.getLooper());
-	}
-
-	/**
-	 * Get instance
-	 * @return Scanner
-	 */
-	@NonNull
-	public static Scanner gi() {
-		if(sInstance == null) {
-			synchronized(Scanner.class) {
-				if(sInstance == null) sInstance = new Scanner();
-			}
-		}
-
-		return sInstance;
 	}
 
 	/**
@@ -166,9 +152,7 @@ public class Scanner {
 	 */
 	@NonNull
 	public List<BleDevice> getScannedDevices() {
-		List<BleDevice> devicesList = new ArrayList<>();
-		for(Map.Entry<String, BleDevice> entry : mScannedDevices.entrySet()) devicesList.add(entry.getValue());
-		return devicesList;
+		return new ArrayList<>(mScannedDevices.values());
 	}
 
 	/**

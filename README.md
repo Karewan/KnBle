@@ -1,7 +1,7 @@
 # KnBle
 
 [![](https://jitpack.io/v/Karewan/KnBle.svg)](https://jitpack.io/#Karewan/KnBle)
-[![API](https://img.shields.io/badge/API-23%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=23)
+[![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=24)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 A simple BLE Android client
@@ -20,13 +20,13 @@ allprojects {
 ```groovy
 android {
 	compileOptions {
-		sourceCompatibility JavaVersion.VERSION_11
-		targetCompatibility JavaVersion.VERSION_11
+		sourceCompatibility JavaVersion.VERSION_21
+		targetCompatibility JavaVersion.VERSION_21
 	}
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:2.5.0'
+	implementation 'com.github.Karewan:KnBle:3.0.0'
 }
 ```
 
@@ -46,12 +46,12 @@ Do not forget to add internet permissions in manifest
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```
 
-Then initialize
+Then initialize, return false if device is not BLE compatible
 ```java
 boolean success = KnBle.gi().init(getApplicationContext());
 ```
 
-Verify is init correctly, return false if device is not BLE compatible
+At any time you can check if the initialization is correct, return false if the device is not BLE compatible
 ```java
 boolean isInit = KnBle.gi().isInit();
 ```
@@ -135,6 +135,7 @@ ScanFilters filters = KnBle.gi().getScanFilters();
 
 #### Get all scanned devices
 ```java
+@NonNull
 List<BleDevice> devices = KnBle.gi().getScannedDevices();
 ```
 
@@ -152,17 +153,28 @@ KnBle.gi().resetScan(true, true);
 
 #### Get device from MAC address
 ```java
+@Nullable
 BleDevice device = KnBle.gi().getBleDeviceFromMac("FF:FF:FF:FF:FF:FF");
 ```
 
 #### Get list of connected devices
 ```java
+@NonNull
 List<BleDevice> devices = KnBle.gi().getConnectedDevices();
 ```
 
 #### Check if device is connected
 ```java
 boolean connected = KnBle.gi().isConnected(device);
+```
+
+#### Get device connection state
+```java
+int state = KnBle.gi().getDeviceConnState(device);
+
+// BleGattCallback.DISCONNECTED
+// BleGattCallback.CONNECTING
+// BleGattCallback.CONNECTED
 ```
 
 #### Connect to a device
@@ -174,37 +186,142 @@ KnBle.gi().connect(device, new BleGattCallback() {
 	}
 
 	@Override
-	public void onConnectFailed() {
+	public void onConnectSuccess(@NonNull List<BluetoothGattService> services) {
 
 	}
 
 	@Override
-	public void onConnectSuccess(List<BluetoothGattService> services) {
-
-	}
-
-	@Override
-	public void onDisconnected() {
+	public void onDisconnected(boolean connectFailed) {
 
 	}
 });
 ```
 
-#### Check if device has a gatt service
+#### Get a gatt service of a device
 ```java
-KnBle.gi().hasService(device, "service uuid",  new BleCheckCallback() {
+KnBle.gi().getService(device, "service uuid",  new BleGetService() {
 	@Override
-	public void onResponse(boolean res) {
+	public void onSuccess(@NonNull BluetoothGattService service) {
+
+	}
+
+	@Override
+	public void onFailed() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().getService(device, serviceUUID,  new BleGetService() {
+	@Override
+	public void onSuccess(@NonNull BluetoothGattService service) {
+
+	}
+
+	@Override
+	public void onFailed() {
 
 	}
 });
 ```
 
-#### Check if device has a gatt characteristic
+#### Get a gatt characteristic of a device
 ```java
-KnBle.gi().hasCharacteristic(device, "service uuid", "characteristic uuid",  new BleCheckCallback() {
+KnBle.gi().getCharacteristic(device, "service uuid", "characteristic uuid",  new BleGetCharacteristic() {
 	@Override
-	public void onResponse(boolean res) {
+	public void onSuccess(@NonNull BluetoothGattCharacteristic characteristic) {
+
+	}
+
+	@Override
+	public void onFailed() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().getCharacteristic(device, serviceUUID, characteristicUUID,  new BleGetCharacteristic() {
+	@Override
+	public void onSuccess(@NonNull BluetoothGattCharacteristic characteristic) {
+
+	}
+
+	@Override
+	public void onFailed() {
+
+	}
+});
+```
+
+#### Get a gatt descriptor of a device
+```java
+KnBle.gi().getDescriptor(device, "service uuid", "characteristic uuid", "descriptor uuid", new BleGetDescriptor() {
+	@Override
+	public void onSuccess(@NonNull BluetoothGattDescriptor descriptor) {
+
+	}
+
+	@Override
+	public void onFailed() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().getDescriptor(device, serviceUUID, characteristicUUID, descriptorUUID, new BleGetDescriptor() {
+	@Override
+	public void onSuccess(@NonNull BluetoothGattDescriptor descriptor) {
+
+	}
+
+	@Override
+	public void onFailed() {
+
+	}
+});
+```
+
+#### Read gatt characteristic data
+```java
+KnBle.gi().read(device, "service uuid", "characteristic uuid", new BleReadCallback() {
+	@Override
+	public void onReadSuccess(@NonNull byte[] data) {
+
+	}
+
+	@Override
+	public void onReadFailed() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().read(device, serviceUUID, characteristicUUID, new BleReadCallback() {
+	@Override
+	public void onReadSuccess(@NonNull byte[] data) {
+
+	}
+
+	@Override
+	public void onReadFailed() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().read(device, service, characteristic, new BleReadCallback() {
+	@Override
+	public void onReadSuccess(@NonNull byte[] data) {
+
+	}
+
+	@Override
+	public void onReadFailed() {
 
 	}
 });
@@ -212,7 +329,50 @@ KnBle.gi().hasCharacteristic(device, "service uuid", "characteristic uuid",  new
 
 #### Write data in gatt characteristic
 ```java
-KnBle.gi().write(device, "service uuid", "characteristic uuid", data, new BleWriteCallback() {
+KnBle.gi().write(device, "service uuid", "characteristic uuid", data, noResponse, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().write(device, serviceUUID, characteristicUUID, data, noResponse, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().write(device, service, characteristic, data, noResponse, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+```
+
+#### Splitted write data in gatt characteristic
+```java
+KnBle.gi().splittedWrite(device, "service uuid", "characteristic uuid", data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
 	@Override
 	public void onWriteFailed() {
 
@@ -231,11 +391,7 @@ KnBle.gi().write(device, "service uuid", "characteristic uuid", data, new BleWri
 
 // OR
 
-// true=split data
-// 20=split into packet of
-// true=if true send when android set last packet sent as success else send immediately
-// 25=interval between two packet
-KnBle.gi().write(device, "service uuid", "characteristic uuid", data, true, 20, true, 25, new BleWriteCallback() {
+KnBle.gi().splittedWrite(device, serviceUUID, characteristicUUID, data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
 	@Override
 	public void onWriteFailed() {
 
@@ -252,18 +408,21 @@ KnBle.gi().write(device, "service uuid", "characteristic uuid", data, true, 20, 
 	}
 });
 
-```
+// OR
 
-#### Read gatt characteristic data
-```java
-KnBle.gi().read(device, "service uuid", "characteristic uuid", new BleReadCallback() {
+KnBle.gi().splittedWrite(device, service, characteristic, data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
 	@Override
-	public void onReadSuccess(byte[] data) {
+	public void onWriteFailed() {
 
 	}
 
 	@Override
-	public void onReadFailed() {
+	public void onWriteProgress(int current, int total) {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
 
 	}
 });
@@ -283,7 +442,45 @@ KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", new BleNo
 	}
 
 	@Override
-	public void onNotify(byte[] data) {
+	public void onNotify(@NonNull byte[] data) {
+
+	}
+});
+
+// OR
+
+KnBle.gi().enableNotify(device, serviceUUID, characteristicUUID, new BleNotifyCallback() {
+	@Override
+	public void onNotifyEnabled() {
+
+	}
+
+	@Override
+	public void onNotifyDisabled() {
+
+	}
+
+	@Override
+	public void onNotify(@NonNull byte[] data) {
+
+	}
+});
+
+// OR
+
+KnBle.gi().enableNotify(device, service, characteristic, new BleNotifyCallback() {
+	@Override
+	public void onNotifyEnabled() {
+
+	}
+
+	@Override
+	public void onNotifyDisabled() {
+
+	}
+
+	@Override
+	public void onNotify(@NonNull byte[] data) {
 
 	}
 });
@@ -291,17 +488,106 @@ KnBle.gi().enableNotify(device, "service uuid", "characteristic uuid", new BleNo
 
 #### Disable characteristic notification
 ```java
-KnBle.gi().disableNotify(device);
+KnBle.gi().disableNotify(device, "service uuid", "characteristic uuid");
+
+// OR
+
+KnBle.gi().disableNotify(device, serviceUUID, characteristicUUID);
+
+// OR
+
+KnBle.gi().disableNotify(device, service, characteristic);
 ```
 
-#### Request connection priority
+#### Read gatt descriptor data
+```java
+KnBle.gi().readDesc(device, "service uuid", "characteristic uuid", "descriptor uuid", new BleReadCallback() {
+	@Override
+	public void onReadSuccess(@NonNull byte[] data) {
+
+	}
+
+	@Override
+	public void onReadFailed() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().readDesc(device, serviceUUID, characteristicUUID, descriptorUUID, new BleReadCallback() {
+	@Override
+	public void onReadSuccess(@NonNull byte[] data) {
+
+	}
+
+	@Override
+	public void onReadFailed() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().readDesc(device, service, characteristic, descriptor new BleReadCallback() {
+	@Override
+	public void onReadSuccess(@NonNull byte[] data) {
+
+	}
+
+	@Override
+	public void onReadFailed() {
+
+	}
+});
+```
+
+#### Write data in gatt descriptor
+```java
+KnBle.gi().writeDesc(device, "service uuid", "characteristic uuid", "descriptor uuid", data, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().writeDesc(device, serviceUUID, characteristicUUID, descriptorUUID, data, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+
+// OR
+
+KnBle.gi().writeDesc(device, service, characteristic, descriptor, data, new BleWriteCallback() {
+	@Override
+	public void onWriteFailed() {
+
+	}
+
+	@Override
+	public void onWriteSuccess() {
+
+	}
+});
+```
+
+#### Request connection priority (BluetoothGatt.CONNECTION_PRIORITY_xxx)
 ```java
 KnBle.gi().requestConnectionPriority(device, connectionPriority);
-```
-
-#### Request MTU change
-```java
-KnBle.gi().requestMtu(device, mtu);
 ```
 
 #### Get current MTU
@@ -309,9 +595,42 @@ KnBle.gi().requestMtu(device, mtu);
 int mtu = KnBle.gi().getMtu(device);
 ```
 
-#### Set prefered PHY
+#### Request MTU change
+```java
+KnBle.gi().requestMtu(device, mtu);
+
+// OR
+
+KnBle.gi().requestMtu(device, mtu, new BleMtuChangedCallback() {
+	@Override
+	public void onMtuChanged(int mtu) {
+
+	}
+});
+```
+
+#### Read PHY (Android 13+)
+```java
+KnBle.gi().readPhy(device, new BlePhyValueCallback() {
+	@Override
+	public void onPhyValue(int txPhy, int rxPhy) {
+
+	}
+});
+```
+
+#### Set prefered PHY (Android 8+)
 ```java
 KnBle.gi().setPreferredPhy(device, txPhy, rxPhy, phyOptions);
+
+// OR
+
+KnBle.gi().setPreferredPhy(device, txPhy, rxPhy, phyOptions, new BlePhyValueCallback() {
+	@Override
+	public void onPhyValue(int txPhy, int rxPhy) {
+
+	}
+});
 ```
 
 #### Change BleGattCallback of a device
@@ -329,27 +648,18 @@ KnBle.gi().disconnect(device);
 KnBle.gi().disconnectAll();
 ```
 
-#### Get device connection state
-```java
-int state = KnBle.gi().getDeviceConnState(device);
-
-// BleGattCallback.DISCONNECTED
-// BleGattCallback.CONNECTING
-// BleGattCallback.CONNECTED
-```
-
 #### Get the BluetoothGatt of a device
 ```java
 @Nullable
 BluetoothGatt gatt = KnBle.gi().getBluetoothGatt(device);
 ```
 
-#### Get last gatt status code of a device
+#### Destroy (and disconnect) a device instance
 ```java
-int status = KnBle.gi().getLastGattStatusOfDevice(device);
+KnBle.gi().destroyDevice(device);
 ```
 
-#### Destroy all devices instances
+#### Destroy (and disconnect) all devices instances
 ```java
 KnBle.gi().destroyAllDevices();
 ```
@@ -371,16 +681,19 @@ KnBle.gi().enableBluetooth(false);
 
 #### Get the bluetooth adapter
 ```java
+@Nullable
 BluetoothAdapter adapter = KnBle.gi().getBluetoothAdapter();
 ```
 
 #### Get the bluetooth manager service
 ```java
+@Nullable
 BluetoothManager btManager = KnBle.gi().getBluetoothManager();
 ```
 
 #### Get KnBle context
 ```java
+@Nullable
 Context ctx = KnBle.gi().getContext();
 ```
 

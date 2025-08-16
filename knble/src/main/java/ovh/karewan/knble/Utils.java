@@ -1,20 +1,34 @@
-package ovh.karewan.knble.utils;
+package ovh.karewan.knble;
 
 import android.content.Context;
 import android.location.LocationManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
 
-import ovh.karewan.knble.KnBle;
-
 @SuppressWarnings("MissingPermission")
 public class Utils {
+	/**
+	 * Log (when DEBUG == true)
+	 * @param msg String
+	 */
+	public static void log(@NonNull String msg) {
+		if(!KnBle.DEBUG) return;
+
+		StackTraceElement ste = new Throwable().getStackTrace()[1];
+
+		String tag = String.format("(%s:%s)",
+				ste.getFileName(),
+				ste.getLineNumber());
+
+		Log.d("KnBle", tag + " " + msg);
+	}
+
 	/**
 	 * Check if at least one location service is enabled (For BLE scan on Android 6+)
 	 * @param context The context
@@ -49,22 +63,18 @@ public class Utils {
 	}
 
 	/**
-	 * Split a data pkg into a queue
+	 * Split a bytes array and fill a queue
 	 * @param data The data
-	 * @param split Split
 	 * @param spliteSize Packet size
+	 * @param queue Queue
 	 */
-	@NonNull
-	public static Queue<byte[]> splitBytesArray(@NonNull byte[] data, boolean split, int spliteSize) {
-		Queue<byte[]> queue = new LinkedList<>();
+	public static void splitBytesArrayAndFillQueue(@NonNull byte[] data, int spliteSize, @NonNull Queue<byte[]> queue) {
+		int pkgCount;
 
-		int pkgCount = 0;
-		if(split) {
-			if (data.length % spliteSize == 0) {
-				pkgCount = data.length / spliteSize;
-			} else {
-				pkgCount = Math.round((float) (data.length / spliteSize + 1));
-			}
+		if (data.length % spliteSize == 0) {
+			pkgCount = data.length / spliteSize;
+		} else {
+			pkgCount = Math.round((float) (data.length / spliteSize + 1));
 		}
 
 		if (pkgCount > 0) {
@@ -84,8 +94,6 @@ public class Utils {
 		} else {
 			queue.offer(data);
 		}
-
-		return queue;
 	}
 
 	/**
@@ -93,10 +101,20 @@ public class Utils {
 	 * @param uuid UUID
 	 * @return byte[]
 	 */
-	public static byte[] uuidAsBytes(UUID uuid) {
+	@NonNull
+	public static byte[] uuidAsBytes(@NonNull UUID uuid) {
 		ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
 		bb.putLong(uuid.getMostSignificantBits());
 		bb.putLong(uuid.getLeastSignificantBits());
 		return bb.array();
+	}
+
+	/**
+	 * Mac address to long
+	 * @param mac String
+	 * @return long
+	 */
+	public static long macToLong(@NonNull String mac) {
+		return Long.parseLong(mac.replace(":", ""), 16);
 	}
 }

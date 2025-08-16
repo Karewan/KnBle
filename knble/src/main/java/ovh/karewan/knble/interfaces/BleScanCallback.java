@@ -2,7 +2,6 @@ package ovh.karewan.knble.interfaces;
 
 import androidx.annotation.NonNull;
 
-import java.util.HashMap;
 import java.util.List;
 
 import ovh.karewan.knble.struct.BleDevice;
