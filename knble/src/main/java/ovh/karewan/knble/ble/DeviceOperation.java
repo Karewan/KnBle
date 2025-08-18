@@ -1,6 +1,7 @@
 package ovh.karewan.knble.ble;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -14,8 +15,10 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 
+import androidx.annotation.DeprecatedSinceApi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -263,27 +266,27 @@ public class DeviceOperation {
 		}
 
 		@Override
-		public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
-			super.onCharacteristicChanged(gatt, characteristic, value);
+		public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+			super.onCharacteristicChanged(gatt, characteristic);
 
 			mHandler.post(() -> {
 				Utils.log("onCharacteristicChanged");
 
 				BleNotifyCallback callback = mNotifyCallbacks.get(characteristic.getUuid());
-				if(callback != null) callback.onNotify(value);
+				if(callback != null) callback.onNotify(characteristic.getValue());
 			});
 		}
 
 		@Override
-		public void onCharacteristicRead(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value, int status) {
-			super.onCharacteristicRead(gatt, characteristic, value, status);
+		public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+			super.onCharacteristicRead(gatt, characteristic, status);
 
 			mHandler.post(() -> {
 				Utils.log("onCharacteristicRead status=" + status);
 
 				if(mPendingTask instanceof ReadCharaTask t) {
 					if(status == BluetoothGatt.GATT_SUCCESS) {
-						t.getCallback().onReadSuccess(value);
+						t.getCallback().onReadSuccess(characteristic.getValue());
 					} else {
 						t.getCallback().onReadFailed();
 					}
@@ -336,15 +339,15 @@ public class DeviceOperation {
 		}
 
 		@Override
-		public void onDescriptorRead(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattDescriptor descriptor, int status, @NonNull byte[] value) {
-			super.onDescriptorRead(gatt, descriptor, status, value);
+		public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+			super.onDescriptorRead(gatt, descriptor, status);
 
 			mHandler.post(() -> {
 				Utils.log("onDescriptorRead status=" + status);
 
 				if(mPendingTask instanceof ReadDescTask t) {
 					if(status == BluetoothGatt.GATT_SUCCESS) {
-						t.getCallback().onReadSuccess(value);
+						t.getCallback().onReadSuccess(descriptor.getValue());
 					} else {
 						t.getCallback().onReadFailed();
 					}

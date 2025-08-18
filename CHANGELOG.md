@@ -5,6 +5,10 @@ TODO
 ---------------------------
 * Bound / Pairing
 
+Version 3.0.2 *(2025-08-18)*
+----------------------------
+* Fixed: new onCharacteristicRead and onCharacteristicChanged callbacks are only called from Android 13+ devices
+
 Version 3.0.1 *(2025-08-18)*
 ----------------------------
 * Fixed: The thread is sometimes destroyed too quickly
