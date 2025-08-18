@@ -13,21 +13,19 @@ import ovh.karewan.knble.interfaces.BleSplittedWriteCallback;
 
 public class SplittedWriteCharaTask extends GattTask {
 	private final UUID mServiceUUID;
-	private BluetoothGattService mService;
+	private final BluetoothGattService mService;
 	private final UUID mCharacteristicUUID;
-	private BluetoothGattCharacteristic mCharacteristic;
+	private final BluetoothGattCharacteristic mCharacteristic;
 	private final byte[] mData;
 	private final int mSplitSize;
 	private final boolean mNoResponse;
-	private final boolean mSendNextWhenLastSuccess;
 	private final long mIntervalBetweenTwoPackage;
 	private final BleSplittedWriteCallback mCallback;
 	private final ConcurrentLinkedQueue<byte[]> mQueue = new ConcurrentLinkedQueue<>();
 	private int mTotalPkg;
-	private boolean mOneWriteHasFailed = false;
 	private Runnable mRunnable;
 
-	public SplittedWriteCharaTask(@NonNull UUID serviceUUID, @NonNull UUID characteristicUUID, @NonNull byte[] data, int splitSize, boolean noResponse, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
+	public SplittedWriteCharaTask(@NonNull UUID serviceUUID, @NonNull UUID characteristicUUID, @NonNull byte[] data, int splitSize, boolean noResponse, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
 		mServiceUUID = serviceUUID;
 		mService = null;
 		mCharacteristicUUID = characteristicUUID;
@@ -35,12 +33,11 @@ public class SplittedWriteCharaTask extends GattTask {
 		mData = data;
 		mSplitSize = splitSize;
 		mNoResponse = noResponse;
-		mSendNextWhenLastSuccess = sendNextWhenLastSuccess;
 		mIntervalBetweenTwoPackage = intervalBetweenTwoPackage;
 		mCallback = callback;
 	}
 
-	public SplittedWriteCharaTask(@NonNull BluetoothGattService service, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] data, int splitSize, boolean noResponse, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
+	public SplittedWriteCharaTask(@NonNull BluetoothGattService service, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] data, int splitSize, boolean noResponse, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
 		mServiceUUID = null;
 		mService = service;
 		mCharacteristicUUID = null;
@@ -48,7 +45,6 @@ public class SplittedWriteCharaTask extends GattTask {
 		mData = data;
 		mSplitSize = splitSize;
 		mNoResponse = noResponse;
-		mSendNextWhenLastSuccess = sendNextWhenLastSuccess;
 		mIntervalBetweenTwoPackage = intervalBetweenTwoPackage;
 		mCallback = callback;
 	}
@@ -64,11 +60,6 @@ public class SplittedWriteCharaTask extends GattTask {
 	}
 
 	@Nullable
-	public synchronized BluetoothGattService setService(@Nullable BluetoothGattService service) {
-		return (mService = service);
-	}
-
-	@Nullable
 	public UUID getCharacteristicUUID() {
 		return mCharacteristicUUID;
 	}
@@ -76,11 +67,6 @@ public class SplittedWriteCharaTask extends GattTask {
 	@Nullable
 	public BluetoothGattCharacteristic getCharacteristic() {
 		return mCharacteristic;
-	}
-
-	@Nullable
-	public synchronized BluetoothGattCharacteristic setCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
-		return (mCharacteristic = characteristic);
 	}
 
 	@NonNull
@@ -94,10 +80,6 @@ public class SplittedWriteCharaTask extends GattTask {
 
 	public boolean isNoResponse() {
 		return mNoResponse;
-	}
-
-	public boolean isSendNextWhenLastSuccess() {
-		return mSendNextWhenLastSuccess;
 	}
 
 	public long getIntervalBetweenTwoPackage() {
@@ -128,14 +110,6 @@ public class SplittedWriteCharaTask extends GattTask {
 		return mQueue.poll();
 	}
 
-	public synchronized void setOneWriteHasFailed(boolean oneWriteHasFailed) {
-		mOneWriteHasFailed = oneWriteHasFailed;
-	}
-
-	public boolean isOneWriteHasFailed() {
-		return mOneWriteHasFailed;
-	}
-
 	@NonNull
 	public Runnable setRunnable(@NonNull Runnable runnable) {
 		return mRunnable = runnable;
@@ -146,8 +120,8 @@ public class SplittedWriteCharaTask extends GattTask {
 		return mRunnable;
 	}
 
-	public int setTotalPkg() {
-		return mTotalPkg = mQueue.size();
+	public void setTotalPkg() {
+		mTotalPkg = mQueue.size();
 	}
 
 	public int getTotalPkg() {

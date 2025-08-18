@@ -302,26 +302,23 @@ public class DeviceOperation {
 
 				if(mPendingTask instanceof SplittedWriteCharaTask t) {
 					if(status == BluetoothGatt.GATT_SUCCESS) {
-						if(!t.isSendNextWhenLastSuccess()) return;
-
 						// Notify progress
 						int totalPkg = t.getTotalPkg();
 						t.getCallback().onWriteProgress(totalPkg-t.getQueueSize(), totalPkg);
 
 						// Execute next pkg
 						Runnable r = t.getRunnable();
-						if(r != null) mHandler.postDelayed(r, t.getIntervalBetweenTwoPackage());
-						else {
+						if(r != null) {
+							long interval = t.getIntervalBetweenTwoPackage();
+							if(interval > 0) mHandler.postDelayed(r, interval);
+							else r.run();
+						} else {
 							t.getCallback().onWriteFailed();
 							signalEndOfTask();
 						}
 					} else {
-						if(t.isSendNextWhenLastSuccess()) {
-							t.getCallback().onWriteFailed();
-							signalEndOfTask();
-						} else {
-							t.setOneWriteHasFailed(true);
-						}
+						t.getCallback().onWriteFailed();
+						signalEndOfTask();
 					}
 				} else if(mPendingTask instanceof WriteCharaTask t) {
 					if(status == BluetoothGatt.GATT_SUCCESS) {
@@ -855,15 +852,10 @@ public class DeviceOperation {
 
 		// Split data and fill the queue
 		Utils.splitBytesArrayAndFillQueue(t.getData(), t.getSplitSize(), t.getQueue());
-		int totalPkg = t.setTotalPkg();
+		t.setTotalPkg();
 
 		// Callback
 		BleSplittedWriteCallback callback = t.getCallback();
-
-		// Interval between pkg
-		long intervalBetweenTwoPackage = t.getIntervalBetweenTwoPackage();
-
-		boolean sendNextWhenLastSuccess = t.isSendNextWhenLastSuccess();
 
 		// Retry counter
 		final int[] retry = {0};
@@ -872,23 +864,12 @@ public class DeviceOperation {
 		(t.setRunnable(new Runnable() {
 			@Override
 			public void run() {
-				// One write has failed
-				boolean oneWriteHasFailed = t.isOneWriteHasFailed();
-
 				// Peek
 				byte[] data = t.peekQueue();
 
 				// Success
-				if(data == null && !oneWriteHasFailed) {
+				if(data == null) {
 					callback.onWriteSuccess();
-					signalEndOfTask();
-					return;
-				}
-
-				// One write has failed
-				if(oneWriteHasFailed) {
-					Utils.log("splittedWriteChara one write has failed");
-					callback.onWriteFailed();
 					signalEndOfTask();
 					return;
 				}
@@ -914,15 +895,6 @@ public class DeviceOperation {
 				if(success) {
 					// Remove pkg from the queue
 					t.pollQueue();
-
-					// If no wait
-					if(!sendNextWhenLastSuccess) {
-						// Notify progress
-						callback.onWriteProgress(totalPkg-t.getQueueSize(), totalPkg);
-
-						// Send the next pkg
-						mHandler.postDelayed(this, intervalBetweenTwoPackage);
-					}
 					return;
 				}
 
@@ -1167,7 +1139,7 @@ public class DeviceOperation {
 		}
 
 		// Get the descriptor
-		BluetoothGattDescriptor descriptor = characteristic.getDescriptor(t.getDescriptorUUID());
+		BluetoothGattDescriptor descriptor = Optional.ofNullable(t.getDescriptor()).orElse(characteristic.getDescriptor(t.getDescriptorUUID()));
 		if(descriptor == null) {
 			Utils.log("readDesc descriptor is null");
 			t.getCallback().onReadFailed();
@@ -1242,7 +1214,7 @@ public class DeviceOperation {
 		}
 
 		// Get the descriptor
-		BluetoothGattDescriptor descriptor = characteristic.getDescriptor(t.getDescriptorUUID());
+		BluetoothGattDescriptor descriptor = Optional.ofNullable(t.getDescriptor()).orElse(characteristic.getDescriptor(t.getDescriptorUUID()));
 		if(descriptor == null) {
 			Utils.log("writeDesc descriptor is null");
 			t.getCallback().onWriteFailed();

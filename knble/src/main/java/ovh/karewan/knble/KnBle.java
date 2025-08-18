@@ -612,13 +612,12 @@ public class KnBle {
 	 * @param data The data
 	 * @param splitSize Split into packet of x
 	 * @param noResponse Write no response
-	 * @param sendNextWhenLastSuccess Send immediatly without waiting writeSuccess
-	 * @param intervalBetweenTwoPackage When sendNextWhenLastSuccess, interval between pkg
+	 * @param intervalBetweenTwoPackage Interval between pkg
 	 * @param callback The callback
 	 */
-	public void splittedWrite(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull byte[] data, int splitSize, boolean noResponse, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
+	public void splittedWrite(@NonNull BleDevice device, @NonNull String serviceUUID, @NonNull String characteristicUUID, @NonNull byte[] data, int splitSize, boolean noResponse, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
 		DeviceOperation deviceOp = mDevicesManager.getDeviceOp(device);
-		if(deviceOp != null) deviceOp.enqueueTask(new SplittedWriteCharaTask(mUuidCache.get(serviceUUID), mUuidCache.get(characteristicUUID), data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback));
+		if(deviceOp != null) deviceOp.enqueueTask(new SplittedWriteCharaTask(mUuidCache.get(serviceUUID), mUuidCache.get(characteristicUUID), data, splitSize, noResponse, intervalBetweenTwoPackage, callback));
 	}
 
 	/**
@@ -629,13 +628,12 @@ public class KnBle {
 	 * @param data The data
 	 * @param splitSize Split into packet of x
 	 * @param noResponse Write no response
-	 * @param sendNextWhenLastSuccess Send immediatly without waiting writeSuccess
-	 * @param intervalBetweenTwoPackage When sendNextWhenLastSuccess, interval between pkg
+	 * @param intervalBetweenTwoPackage Interval between pkg
 	 * @param callback The callback
 	 */
-	public void splittedWrite(@NonNull BleDevice device, @NonNull UUID serviceUUID, @NonNull UUID characteristicUUID, @NonNull byte[] data, int splitSize, boolean noResponse, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
+	public void splittedWrite(@NonNull BleDevice device, @NonNull UUID serviceUUID, @NonNull UUID characteristicUUID, @NonNull byte[] data, int splitSize, boolean noResponse, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
 		DeviceOperation deviceOp = mDevicesManager.getDeviceOp(device);
-		if(deviceOp != null) deviceOp.enqueueTask(new SplittedWriteCharaTask(serviceUUID, characteristicUUID, data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback));
+		if(deviceOp != null) deviceOp.enqueueTask(new SplittedWriteCharaTask(serviceUUID, characteristicUUID, data, splitSize, noResponse, intervalBetweenTwoPackage, callback));
 	}
 
 	/**
@@ -646,13 +644,12 @@ public class KnBle {
 	 * @param data The data
 	 * @param splitSize Split into packet of x
 	 * @param noResponse Write no response
-	 * @param sendNextWhenLastSuccess Send immediatly without waiting writeSuccess
-	 * @param intervalBetweenTwoPackage When sendNextWhenLastSuccess, interval between pkg
+	 * @param intervalBetweenTwoPackage Interval between pkg
 	 * @param callback The callback
 	 */
-	public void splittedWrite(@NonNull BleDevice device, @NonNull BluetoothGattService service, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] data, int splitSize, boolean noResponse, boolean sendNextWhenLastSuccess, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
+	public void splittedWrite(@NonNull BleDevice device, @NonNull BluetoothGattService service, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] data, int splitSize, boolean noResponse, long intervalBetweenTwoPackage, @NonNull BleSplittedWriteCallback callback) {
 		DeviceOperation deviceOp = mDevicesManager.getDeviceOp(device);
-		if(deviceOp != null) deviceOp.enqueueTask(new SplittedWriteCharaTask(service, characteristic, data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, callback));
+		if(deviceOp != null) deviceOp.enqueueTask(new SplittedWriteCharaTask(service, characteristic, data, splitSize, noResponse, intervalBetweenTwoPackage, callback));
 	}
 
 	/**
