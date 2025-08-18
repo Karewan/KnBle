@@ -28,7 +28,7 @@ public class DevicesManager {
 	 */
 	public void removeDevice(@NonNull BleDevice device) {
 		DeviceOperation deviceOp = mDevicesOp.remove(device.getMacLong());
-		if (deviceOp != null) deviceOp.disconnect();
+		if (deviceOp != null) deviceOp.disconnect(true);
 	}
 
 	/**
@@ -60,14 +60,14 @@ public class DevicesManager {
 	 * Disconnect all devices
 	 */
 	public void disconnectAll() {
-		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.disconnect();
+		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.disconnect(false);
 	}
 
 	/**
 	 * Destroy all devices instances
 	 */
 	public void destroyAll() {
-		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.destroy();
+		for (DeviceOperation deviceOp : mDevicesOp.values()) deviceOp.disconnect(true);
 		mDevicesOp.clear();
 	}
 }

@@ -811,7 +811,7 @@ public class KnBle {
 	 */
 	public void disconnect(@NonNull BleDevice device) {
 		DeviceOperation deviceOp = mDevicesManager.getDeviceOp(device);
-		if(deviceOp != null) deviceOp.disconnect();
+		if(deviceOp != null) deviceOp.disconnect(false);
 	}
 
 	/**

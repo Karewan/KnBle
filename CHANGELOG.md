@@ -5,6 +5,10 @@ TODO
 ---------------------------
 * Bound / Pairing
 
+Version 3.0.1 *(2025-08-18)*
+----------------------------
+* Fixed: The thread is sometimes destroyed too quickly
+
 Version 3.0.0 *(2025-08-16)*
 ----------------------------
 * Gatt Queue (to never execute two operations per device at the same time)

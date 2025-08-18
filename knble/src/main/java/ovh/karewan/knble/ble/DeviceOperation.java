@@ -232,7 +232,7 @@ public class DeviceOperation {
 
 					// Disconnect
 					case BluetoothProfile.STATE_DISCONNECTED:
-						if(mState != BleGattCallback.DISCONNECTED) disconnect();
+						if(mState != BleGattCallback.DISCONNECTED) disconnect(false);
 						break;
 				}
 			});
@@ -498,7 +498,7 @@ public class DeviceOperation {
 
 				if(!KnBle.gi().enableBluetooth(true)) {
 					// Connect failed => Disconnect
-					disconnect();
+					disconnect(false);
 				} else {
 					// Add delay to be sure the adapter has time to init before connect
 					delayBeforeConnect += 5000;
@@ -516,7 +516,7 @@ public class DeviceOperation {
 				if(mBluetoothGatt == null) setBluetoothGatt(mDevice.getDevice().connectGatt(KnBle.gi().getContext(), false, mBluetoothGattCallback));
 
 				// Connect failed => Disconnect
-				if(mBluetoothGatt == null) disconnect();
+				if(mBluetoothGatt == null) disconnect(false);
 			}, delayBeforeConnect);
 		});
 	}
@@ -1294,9 +1294,9 @@ public class DeviceOperation {
 	/**
 	 * Disconnect the device
 	 */
-	public void disconnect() {
+	public void disconnect(boolean destroy) {
 		mHandler.post(() -> {
-			Utils.log("disconnect");
+			Utils.log("disconnect destroy=" + destroy);
 
 			// Disconnect
 			if(mBluetoothGatt != null) {
@@ -1327,15 +1327,10 @@ public class DeviceOperation {
 				mCallback.onDisconnected(connectFailed);
 				setGattCallback(null);
 			}
-		});
-	}
 
-	/**
-	 * Destroy this device operation
-	 */
-	public void destroy() {
-		disconnect();
-		mHandlerThread.quit();
+			// Destroy the thread
+			if(destroy) mHandlerThread.quit();
+		});
 	}
 
 	/**
