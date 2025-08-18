@@ -13,11 +13,11 @@ import ovh.karewan.knble.interfaces.BleWriteCallback;
 
 public class WriteDescTask extends GattTask {
 	private final UUID mServiceUUID;
-	private BluetoothGattService mService;
+	private final BluetoothGattService mService;
 	private final UUID mCharacteristicUUID;
-	private BluetoothGattCharacteristic mCharacteristic;
+	private final BluetoothGattCharacteristic mCharacteristic;
 	private final UUID mDescriptorUUID;
-	private BluetoothGattDescriptor mDescriptor;
+	private final BluetoothGattDescriptor mDescriptor;
 	private final byte[] mData;
 	private final BleWriteCallback mCallback;
 
@@ -54,11 +54,6 @@ public class WriteDescTask extends GattTask {
 	}
 
 	@Nullable
-	public synchronized BluetoothGattService setService(@Nullable BluetoothGattService service) {
-		return (mService = service);
-	}
-
-	@Nullable
 	public UUID getCharacteristicUUID() {
 		return mCharacteristicUUID;
 	}
@@ -69,11 +64,6 @@ public class WriteDescTask extends GattTask {
 	}
 
 	@Nullable
-	public synchronized BluetoothGattCharacteristic setCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
-		return (mCharacteristic = characteristic);
-	}
-
-	@Nullable
 	public UUID getDescriptorUUID() {
 		return mDescriptorUUID;
 	}
@@ -81,11 +71,6 @@ public class WriteDescTask extends GattTask {
 	@Nullable
 	public BluetoothGattDescriptor getDescriptor() {
 		return mDescriptor;
-	}
-
-	@Nullable
-	public synchronized BluetoothGattDescriptor setDescriptor(@Nullable BluetoothGattDescriptor descriptor) {
-		return (mDescriptor = descriptor);
 	}
 
 	@NonNull

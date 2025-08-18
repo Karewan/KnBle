@@ -12,9 +12,9 @@ import ovh.karewan.knble.interfaces.BleNotifyCallback;
 
 public class DisableNotifyTask extends GattTask {
 	private final UUID mServiceUUID;
-	private BluetoothGattService mService;
+	private final BluetoothGattService mService;
 	private final UUID mCharacteristicUUID;
-	private BluetoothGattCharacteristic mCharacteristic;
+	private final BluetoothGattCharacteristic mCharacteristic;
 	private final UUID mDescriptorUUID;
 	private BleNotifyCallback mCallback;
 
@@ -45,11 +45,6 @@ public class DisableNotifyTask extends GattTask {
 	}
 
 	@Nullable
-	public synchronized BluetoothGattService setService(@Nullable BluetoothGattService service) {
-		return (mService = service);
-	}
-
-	@Nullable
 	public UUID getCharacteristicUUID() {
 		return mCharacteristicUUID;
 	}
@@ -57,11 +52,6 @@ public class DisableNotifyTask extends GattTask {
 	@Nullable
 	public BluetoothGattCharacteristic getCharacteristic() {
 		return mCharacteristic;
-	}
-
-	@Nullable
-	public synchronized BluetoothGattCharacteristic setCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
-		return (mCharacteristic = characteristic);
 	}
 
 	@Nullable

@@ -12,9 +12,9 @@ import ovh.karewan.knble.interfaces.BleReadCallback;
 
 public class ReadCharaTask extends GattTask {
 	private final UUID mServiceUUID;
-	private BluetoothGattService mService;
+	private final BluetoothGattService mService;
 	private final UUID mCharacteristicUUID;
-	private BluetoothGattCharacteristic mCharacteristic;
+	private final BluetoothGattCharacteristic mCharacteristic;
 	private final BleReadCallback mCallback;
 
 	public ReadCharaTask(@NonNull UUID serviceUUID, @NonNull UUID characteristicUUID, @NonNull BleReadCallback callback) {
@@ -44,11 +44,6 @@ public class ReadCharaTask extends GattTask {
 	}
 
 	@Nullable
-	public BluetoothGattService setService(@Nullable BluetoothGattService service) {
-		return (mService = service);
-	}
-
-	@Nullable
 	public UUID getCharacteristicUUID() {
 		return mCharacteristicUUID;
 	}
@@ -56,11 +51,6 @@ public class ReadCharaTask extends GattTask {
 	@Nullable
 	public BluetoothGattCharacteristic getCharacteristic() {
 		return mCharacteristic;
-	}
-
-	@Nullable
-	public BluetoothGattCharacteristic setCharacteristic(@Nullable BluetoothGattCharacteristic characteristic) {
-		return (mCharacteristic = characteristic);
 	}
 
 	@NonNull
