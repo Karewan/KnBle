@@ -5,6 +5,12 @@ TODO
 ---------------------------
 * Bound / Pairing
 
+Version 3.0.3 *(2025-08-18)*
+----------------------------
+* **BREAKING CHANGE**: Removed sendNextWhenLastSuccess parameters from splittedWrite => now pkg are always sent when last success (better performance and fiability)
+* Bumped deps
+* Various changes and improvements
+
 Version 3.0.2 *(2025-08-18)*
 ----------------------------
 * Fixed: new onCharacteristicRead and onCharacteristicChanged callbacks are only called from Android 13+ devices

@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:3.0.2'
+	implementation 'com.github.Karewan:KnBle:3.0.3'
 }
 ```
 
@@ -372,7 +372,7 @@ KnBle.gi().write(device, service, characteristic, data, noResponse, new BleWrite
 
 #### Splitted write data in gatt characteristic
 ```java
-KnBle.gi().splittedWrite(device, "service uuid", "characteristic uuid", data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
+KnBle.gi().splittedWrite(device, "service uuid", "characteristic uuid", data, splitSize, noResponse, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
 	@Override
 	public void onWriteFailed() {
 
@@ -391,7 +391,7 @@ KnBle.gi().splittedWrite(device, "service uuid", "characteristic uuid", data, sp
 
 // OR
 
-KnBle.gi().splittedWrite(device, serviceUUID, characteristicUUID, data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
+KnBle.gi().splittedWrite(device, serviceUUID, characteristicUUID, data, splitSize, noResponse, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
 	@Override
 	public void onWriteFailed() {
 
@@ -410,7 +410,7 @@ KnBle.gi().splittedWrite(device, serviceUUID, characteristicUUID, data, splitSiz
 
 // OR
 
-KnBle.gi().splittedWrite(device, service, characteristic, data, splitSize, noResponse, sendNextWhenLastSuccess, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
+KnBle.gi().splittedWrite(device, service, characteristic, data, splitSize, noResponse, intervalBetweenTwoPackage, new BleSplittedWriteCallback() {
 	@Override
 	public void onWriteFailed() {
 
