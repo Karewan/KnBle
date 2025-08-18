@@ -1,7 +1,6 @@
 package ovh.karewan.knble.ble;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -15,10 +14,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 
-import androidx.annotation.DeprecatedSinceApi;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
