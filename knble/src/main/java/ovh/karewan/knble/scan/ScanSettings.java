@@ -102,11 +102,12 @@ public class ScanSettings {
 	private final int mPhy;
 	private final long mReportDelay;
 	private final boolean mLegacy;
+	private final boolean mNeverForLocation;
 
 	/**
 	 * Class constructor
 	 */
-	private ScanSettings(long scanTimeout, int scanMode, int matchMode, int nbMatch, int callbackType, int  phy, long reportDelay, boolean legacy, long autoRestartScanAfter) {
+	private ScanSettings(long scanTimeout, int scanMode, int matchMode, int nbMatch, int callbackType, int  phy, long reportDelay, boolean legacy, long autoRestartScanAfter, boolean neverForLocation) {
 		this.mScanTimeout = scanTimeout;
 		this.mAutoRestartScanAfter = autoRestartScanAfter;
 		this.mScanMode = scanMode;
@@ -116,6 +117,7 @@ public class ScanSettings {
 		this.mPhy = phy;
 		this.mReportDelay = reportDelay;
 		this.mLegacy = legacy;
+		this.mNeverForLocation = neverForLocation;
 	}
 
 	/**
@@ -191,6 +193,14 @@ public class ScanSettings {
 	}
 
 	/**
+	 * Is scan never used for location ?
+	 * @return mLegacy
+	 */
+	public boolean isNeverForLocation() {
+		return mNeverForLocation;
+	}
+
+	/**
 	 * Builder
 	 */
 	public static final class Builder {
@@ -203,6 +213,7 @@ public class ScanSettings {
 		private int mPhy = PHY_LE_ALL_SUPPORTED;
 		private long mReportDelay = 0;
 		private boolean mLegacy = true;
+		private boolean mNeverForLocation = true;
 
 		public Builder setScanTimeout(long timeout) {
 			this.mScanTimeout = timeout;
@@ -249,8 +260,13 @@ public class ScanSettings {
 			return this;
 		}
 
+		public Builder setNeverForLocation(boolean never) {
+			this.mNeverForLocation = never;
+			return this;
+		}
+
 		public ScanSettings build() {
-			return new ScanSettings(mScanTimeout, mScanMode, mMatchMode, mNbMatch, mCallbackType, mPhy, mReportDelay, mLegacy, mAutoRestartScanAfter);
+			return new ScanSettings(mScanTimeout, mScanMode, mMatchMode, mNbMatch, mCallbackType, mPhy, mReportDelay, mLegacy, mAutoRestartScanAfter, mNeverForLocation);
 		}
 	}
 }

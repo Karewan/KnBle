@@ -204,8 +204,8 @@ public class Scanner {
 			return;
 		}
 
-		// Check if location services are enabled on Android 6+
-		if(!Utils.areLocationServicesEnabled(KnBle.gi().getContext())) {
+		// Check if location services are enabled on Android 6-11
+		if((Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !mScanSettings.isNeverForLocation()) && !Utils.areLocationServicesEnabled(KnBle.gi().getContext())) {
 			setLastError(BleScanCallback.LOCATION_DISABLED);
 			callback.onScanFailed(mLastError);
 			return;
