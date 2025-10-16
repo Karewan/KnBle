@@ -26,7 +26,7 @@ android {
 }
 
 dependencies {
-	implementation 'com.github.Karewan:KnBle:3.0.4'
+	implementation 'com.github.Karewan:KnBle:3.0.5'
 }
 ```
 
