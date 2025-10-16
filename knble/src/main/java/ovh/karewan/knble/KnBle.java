@@ -840,8 +840,10 @@ public class KnBle {
 	private final BroadcastReceiver mBtStateReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if((intent == null || intent.getAction() == null || !intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED) || mBluetoothAdapter == null)
-					|| (mBluetoothAdapter.getState() != BluetoothAdapter.STATE_TURNING_OFF && mBluetoothAdapter.getState() != BluetoothAdapter.STATE_OFF)) return;
+			if((intent == null || intent.getAction() == null || !intent.getAction().equals(BluetoothAdapter.ACTION_STATE_CHANGED) || mBluetoothAdapter == null)) return;
+
+			int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+			if(state != BluetoothAdapter.STATE_TURNING_OFF && state != BluetoothAdapter.STATE_OFF) return;
 
 			mScanner.handleBtTurningOff();
 			mDevicesManager.disconnectAll();

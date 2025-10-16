@@ -5,6 +5,11 @@ TODO
 ---------------------------
 * Bound / Pairing
 
+Version 3.0.4 *(2025-10-16)*
+----------------------------
+* Fixed a possible crash when the user disabled the Bluetooth when a BLE scan was running
+* Bumped dep
+
 Version 3.0.3 *(2025-08-18)*
 ----------------------------
 * **BREAKING CHANGE**: Removed sendNextWhenLastSuccess parameters from splittedWrite => now pkg are always sent when last success (better performance and fiability)

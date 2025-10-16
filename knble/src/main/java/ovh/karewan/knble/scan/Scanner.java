@@ -428,7 +428,7 @@ public class Scanner {
 		mHandler.removeCallbacksAndMessages(null);
 
 		// Stop scan
-		if(mBluetoothLeScanner != null && mScanCallback != null) mBluetoothLeScanner.stopScan(mScanCallback);
+		if(mBluetoothLeScanner != null && mScanCallback != null && KnBle.gi().isBluetoothEnabled()) mBluetoothLeScanner.stopScan(mScanCallback);
 
 		// Scanned finished
 		setIsScanning(false);
