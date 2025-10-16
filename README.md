@@ -35,13 +35,16 @@ Do not forget to add internet permissions in manifest
 <!-- For all Android versions -->
 <uses-permission android:name="android.permission.BLUETOOTH"/>
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-<!-- Android 6+: Needed for BLE scan -->
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<!--
+	Android 6+: Needed for BLE scan
+	Optionnal permission on Android 12+, use only if you need to derive location from scan results
+	neverForLocation is optional, please also set the never location in the scanner settings default => true
+-->
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" android:usesPermissionFlags="neverForLocation"/>
 <!-- Android 10+: For background BLE scan (Optional) -->
-<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-<!-- Android 12+: BLE scan -->
-<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" android:minSdkVersion="31"/>
+<!-- Android 12+: BLE scan (neverForLocation is optional, please also set the never location in the scanner settings default => true) -->
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:minSdkVersion="31" android:usesPermissionFlags="neverForLocation"/>
 <!-- Android 12+: BLE connect to already paired device -->
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```
