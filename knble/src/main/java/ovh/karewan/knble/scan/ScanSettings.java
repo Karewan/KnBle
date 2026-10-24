@@ -121,7 +121,8 @@ public class ScanSettings {
 	}
 
 	/**
-	 * Get the scan timeout (Android 4.4+)
+	 * Get the scan timeout: the scan of the app ends after it (0: until stopScan). Ignored when getAutoRestartScanAfter()
+	 * is set, as in 3.x.
 	 * @return mScanTimeout
 	 */
 	public long getScanTimeout() {
@@ -129,7 +130,8 @@ public class ScanSettings {
 	}
 
 	/**
-	 * Auto restart scan after x ms (Android 4.4+)
+	 * Interval of the silent restarts of the system scan (0: automatic, the recommended value). The scan of the app then
+	 * lasts until stopScan (no timeout, as in 3.x).
 	 * @return mAutoRestartScanAfter
 	 */
 	public long getAutoRestartScanAfter() {
@@ -185,7 +187,8 @@ public class ScanSettings {
 	}
 
 	/**
-	 * Use legacy advertisements (Android 8+)
+	 * Legacy advertisements only (Android 8+). False by default: the extended ones are received too when the phone
+	 * supports them, on the PHY of getPhy() (1M by default)
 	 * @return mLegacy
 	 */
 	public boolean isLegacy() {
@@ -193,8 +196,10 @@ public class ScanSettings {
 	}
 
 	/**
-	 * Is scan never used for location ?
-	 * @return mLegacy
+	 * Is scan never used for location? True (default): on Android 12+ the scan needs neither the location permission nor
+	 * the location services, provided the manifest declares BLUETOOTH_SCAN with
+	 * android:usesPermissionFlags="neverForLocation" (without it Android needs the location: KnBle checks it).
+	 * @return mNeverForLocation
 	 */
 	public boolean isNeverForLocation() {
 		return mNeverForLocation;
@@ -210,9 +215,10 @@ public class ScanSettings {
 		private int mMatchMode = MATCH_MODE_AGGRESSIVE;
 		private int mNbMatch = MATCH_NUM_MAX_ADVERTISEMENT;
 		private int mCallbackType = CALLBACK_TYPE_ALL_MATCHES;
-		private int mPhy = PHY_LE_ALL_SUPPORTED;
+		// 1M only: scanning the coded PHY too takes half of the time of the 1M one, where all legacy devices are
+		private int mPhy = PHY_LE_1M;
 		private long mReportDelay = 0;
-		private boolean mLegacy = true;
+		private boolean mLegacy = false;
 		private boolean mNeverForLocation = true;
 
 		public Builder setScanTimeout(long timeout) {

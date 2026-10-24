@@ -1,0 +1,41 @@
+plugins {
+	alias(libs.plugins.android.application)
+}
+
+// KnBle test bench hosted by a phone (BLE peripheral, Android GATT server, classic SPP server): the same protocols as
+// the ESP32 benches (testbench/esp32-c3, testbench/esp32-classic). The sample finds it by its bench service UUID (--es bench pc). Not published.
+// ./gradlew :benchhost:installRelease (not debuggable, signed with the debug key)
+android {
+	namespace = 'ovh.karewan.knble.benchhost'
+	compileSdk = 37
+
+	defaultConfig {
+		applicationId = 'ovh.karewan.knble.benchhost'
+		// The peripheral role needs Android 8 at least on most phones
+		minSdk = 26
+		targetSdk = 37
+		versionCode = 1
+		versionName = '1.0'
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled = false
+			signingConfig = signingConfigs.debug
+		}
+	}
+
+	lint {
+		abortOnError = false
+		checkReleaseBuilds = false
+	}
+
+	compileOptions {
+		sourceCompatibility = JavaVersion.VERSION_21
+		targetCompatibility = JavaVersion.VERSION_21
+	}
+}
+
+dependencies {
+	implementation(libs.androidx.annotation)
+}

@@ -7,3 +7,7 @@
 /captures
 .externalNativeBuild
 .cxx
+.kotlin
+
+# Measurements of the test bench (local only)
+/testbench/results/

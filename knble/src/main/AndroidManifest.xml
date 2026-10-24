@@ -1,1 +1,16 @@
-<manifest/>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools">
+
+	<application>
+		<!-- KnBle.associate (Android 8+, never started before): shows the companion device dialog of the system, invisible. Every configuration change:
+			 never created again while the dialog is shown -->
+		<activity
+			android:name=".internal.AssociateActivity"
+			android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|density|layoutDirection|colorMode|grammaticalGender|fontScale|fontWeightAdjustment"
+			android:excludeFromRecents="true"
+			android:exported="false"
+			android:theme="@android:style/Theme.Translucent.NoTitleBar"
+			tools:targetApi="o" />
+	</application>
+
+</manifest>

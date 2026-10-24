@@ -1,1 +1,7 @@
 jdk: openjdk21
+before_install:
+  # Android Studio's Gradle daemon JVM criteria (JDK 25) would make Gradle download another JDK: build with this one
+  - rm -f gradle/gradle-daemon-jvm.properties
+install:
+  # Only the library is built (not the sample module), published with the version requested from JitPack
+  - ./gradlew :knble:publishToMavenLocal -Pversion=$VERSION
