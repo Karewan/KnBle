@@ -1,20 +1,24 @@
 package ovh.karewan.knble.interfaces;
 
-public interface BleSplittedWriteCallback {
+import androidx.annotation.NonNull;
+
+import ovh.karewan.knble.struct.BleProgress;
+
+/**
+ * Result and progress of a splittedWrite. Only onWriteSuccess() is mandatory: a lambda works.
+ */
+public interface BleSplittedWriteCallback extends BleWriteCallback {
 	/**
-	 * On write failed
+	 * At most one every 100 ms, plus the last one: bytes, packets and rate
 	 */
-	void onWriteFailed();
+	default void onWriteProgress(@NonNull BleProgress progress) {
+		onWriteProgress(progress.getPackets(), progress.getTotalPackets());
+	}
 
 	/**
-	 * On write progress
-	 * @param current Current packet
+	 * Form of KnBle 3, called by the default onWriteProgress(BleProgress)
+	 * @param current Packets written
 	 * @param total Total packets
 	 */
-	void onWriteProgress(int current, int total);
-
-	/**
-	 * On write success (All packets writed)
-	 */
-	void onWriteSuccess();
+	default void onWriteProgress(int current, int total) {}
 }

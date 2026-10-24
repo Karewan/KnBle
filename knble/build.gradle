@@ -1,44 +1,72 @@
 plugins {
-	id 'com.android.library'
+	alias(libs.plugins.android.library)
 	id 'maven-publish'
 }
 
+// Single source of truth for the library version (BuildConfig and publication)
+def knBleVersion = '4.0.0'
+// JitPack publishes the requested tag, commit or branch: it passes it with -Pversion
+def publicationVersion = project.version.toString() in ['', 'unspecified'] ? knBleVersion : project.version.toString()
+
 android {
-	namespace 'ovh.karewan.knble'
-	compileSdk = 36
+	namespace = 'ovh.karewan.knble'
+	compileSdk = 37
 
 	defaultConfig {
-		minSdk 24
-		targetSdk 36
-		versionCode 305
-		versionName "3.0.5"
+		minSdk = 24
+		testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 		consumerProguardFiles 'proguard-rules.pro'
+		buildConfigField 'String', 'VERSION_NAME', "\"${knBleVersion}\""
+	}
+
+	buildFeatures {
+		buildConfig = true
 	}
 
 	buildTypes {
 		release {
-			minifyEnabled false
-			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+			minifyEnabled = false
 		}
 	}
 
-	lintOptions {
-		abortOnError false
+	lint {
+		abortOnError = false
+		targetSdk = 37
+	}
+
+	testOptions {
+		targetSdk = 37
+		unitTests {
+			includeAndroidResources = true
+			all {
+				maxHeapSize = '2g'
+				// Robolectric (SDK 36) on recent JDKs
+				jvmArgs '--add-opens=java.base/jdk.internal.access=ALL-UNNAMED', '--add-exports=java.base/jdk.internal.access=ALL-UNNAMED', '--enable-native-access=ALL-UNNAMED'
+			}
+		}
 	}
 
 	compileOptions {
-		sourceCompatibility JavaVersion.VERSION_21
-		targetCompatibility JavaVersion.VERSION_21
+		sourceCompatibility = JavaVersion.VERSION_21
+		targetCompatibility = JavaVersion.VERSION_21
 	}
 
 	publishing {
-		singleVariant("release")
+		singleVariant('release') {
+			withSourcesJar()
+		}
 	}
 }
 
 dependencies {
-	implementation(platform('org.jetbrains.kotlin:kotlin-bom:2.2.20'))
-	implementation 'androidx.annotation:annotation:1.9.1'
+	implementation(platform(libs.kotlin.bom))
+	// Annotations used by the public API (@NonNull, @RequiresApi...)
+	api(libs.androidx.annotation)
+
+	testImplementation(libs.junit)
+	testImplementation(libs.robolectric)
+	testImplementation(libs.androidx.test.core)
+	testImplementation(libs.androidx.test.ext.junit)
 }
 
 afterEvaluate {
@@ -48,8 +76,12 @@ afterEvaluate {
 				from components.release
 				groupId = 'com.github.Karewan'
 				artifactId = 'KnBle'
-				version = android.defaultConfig.versionName
+				version = publicationVersion
 			}
 		}
 	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 }

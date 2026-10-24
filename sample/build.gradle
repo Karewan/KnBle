@@ -1,0 +1,40 @@
+plugins {
+	alias(libs.plugins.android.application)
+}
+
+// Test app to benchmark, stress and pair KnBle on a phone, with the benches of testbench/ (not published).
+// Measurements: ./gradlew :sample:installRelease (not debuggable, signed with the debug key)
+android {
+	namespace = 'ovh.karewan.knble.sample'
+	compileSdk = 37
+
+	defaultConfig {
+		applicationId = 'ovh.karewan.knble.sample'
+		// Same minSdk as the library: the old phones are the ones to test
+		minSdk = 24
+		targetSdk = 37
+		versionCode = 1
+		versionName = '1.0'
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled = false
+			signingConfig = signingConfigs.debug
+		}
+	}
+
+	lint {
+		abortOnError = false
+		checkReleaseBuilds = false
+	}
+
+	compileOptions {
+		sourceCompatibility = JavaVersion.VERSION_21
+		targetCompatibility = JavaVersion.VERSION_21
+	}
+}
+
+dependencies {
+	implementation(project(':knble'))
+}

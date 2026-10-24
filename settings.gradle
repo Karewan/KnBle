@@ -15,4 +15,8 @@ dependencyResolutionManagement {
 }
 
 include ':knble'
+include ':sample'
+// Test bench hosted by a phone (testbench/benchhost): not published
+include ':benchhost'
+project(':benchhost').projectDir = file('testbench/benchhost')
 rootProject.name='KnBle'
